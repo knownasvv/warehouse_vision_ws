@@ -24,7 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'scenario_publisher = warehouse_vision_safety.scenario_publisher:main'
+            'scenario_publisher = warehouse_vision_safety.scenario_publisher:main',
+            'mock_person_detector = warehouse_vision_safety.mock_person_detector:main',
+            'risk_monitor = warehouse_vision_safety.risk_monitor:main'
         ],
     },
 )
