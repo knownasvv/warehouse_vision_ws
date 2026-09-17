@@ -1,0 +1,10 @@
+build/
+install/
+log/
+__pycache__/
+*.pyc
+.venv/
+*.bag/
+*.db3
+models/*.onnx
+results/
