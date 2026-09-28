@@ -8,3 +8,5 @@ __pycache__/
 *.db3
 models/*.onnx
 results/
+models/*.onnx
+test_data/*.jpg
