@@ -3,7 +3,6 @@ import math
 from cv_bridge import CvBridge
 
 import message_filters
-import numpy as np
 import rclpy
 
 from rclpy.node import Node
@@ -11,6 +10,12 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32, String
 from vision_msgs.msg import Detection2DArray
+
+from warehouse_vision_safety.safety_logic import (
+    classify_distance,
+    DepthValidationError,
+    median_depth_in_bbox
+)
 
 
 class RiskMonitor(Node):
@@ -88,7 +93,7 @@ class RiskMonitor(Node):
         self.last_synchronized_input = self.get_clock().now()
 
         try:
-            depth = self.bridge.imgmsg_to_cv2(
+            depth_image = self.bridge.imgmsg_to_cv2(
                 depth_message,
                 desired_encoding='32FC1'
             )
@@ -103,41 +108,44 @@ class RiskMonitor(Node):
 
         distances = []
         for detection in detections_message.detections:
-            center_x = detection.bbox.center.position.x
-            center_y = detection.bbox.center.position.y
-            size_x = detection.bbox.size_x
-            size_y = detection.bbox.size_y
-
-            x_min = max(0, int(math.floor(center_x - size_x / 2.0)))
-            x_max = min(depth.shape[1], int(math.ceil(center_x + size_x / 2.0)))
-            y_min = max(0, int(math.floor(center_y - size_y / 2.0)))
-            y_max = min(depth.shape[0], int(math.ceil(center_y + size_y / 2.0)))
-
-            if x_min >= x_max or y_min >= y_max:
-                self.publish_result('SENSOR_FAULT', reason='invalid detection bounds')
+            try:
+                distance = median_depth_in_bbox(
+                    depth_image=depth_image,
+                    center_x=detection.bbox.center.position.x,
+                    center_y=detection.bbox.center.position.y,
+                    size_x=detection.bbox.size_x,
+                    size_y=detection.bbox.size_y,
+                    minimum_valid_pixels=self.get_parameter('minimum_valid_pixels').value
+                )
+            except DepthValidationError as error:
+                self.get_logger().warning(f'Cannot estimate person distance: {error}')
+                self.publish_result('SENSOR_FAULT')
                 return
 
-            region = depth[y_min:y_max, x_min:x_max]
-            valid = region[np.isfinite(region) & (region > 0.0)]
+            distances.append(distance)
 
-            minimum_valid_pixels = int(self.get_parameter('minimum_valid_pixels').value)
-            if valid.size < minimum_valid_pixels:
-                self.publish_result('SENSOR_FAULT', reason='insufficient valid depth')
-                return
-
-            distances.append(float(np.median(valid)))
+        if not distances:
+            self.publish_result('CLEAR')
+            return
 
         nearest_distance = min(distances)
-        stop_distance = float(self.get_parameter('stop_distance_m').value)
-        slow_distance = float(self.get_parameter('slow_distance_m').value)
 
-        if nearest_distance <= stop_distance:
-            state = 'STOP'
-        elif nearest_distance <= slow_distance:
-            state = 'SLOW'
-        else:
-            state = 'CLEAR'
-        self.publish_result(state, nearest_distance)
+        try:
+            state = classify_distance(
+                distance_m=nearest_distance,
+                stop_distance_m=self.get_parameter('stop_distance_m').value,
+                slow_distance_m=self.get_parameter('slow_distance_m').value
+            )
+        except DepthValidationError as error:
+            self.get_logger().error(f'Invalid safety configuration: {error}')
+            self.publish_result('SENSOR_FAULT')
+            return
+
+        distance_message = Float32()
+        distance_message.data = nearest_distance
+        self.distance_publisher.publish(distance_message)
+
+        self.publish_result(state)
 
     def check_staleness(self):
         timeout = float(self.get_parameter('stale_timeout_s').value)
