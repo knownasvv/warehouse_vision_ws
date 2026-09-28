@@ -17,7 +17,7 @@ class RiskMonitor(Node):
 
         self.declare_parameter("stop_distance_m", 1.0)
         self.declare_parameter("slow_distance_m", 3.0)
-        self.declare_parameter("state_timeout_s", 1.0)
+        self.declare_parameter("stale_timeout_s", 1.0)
         self.declare_parameter("minimum_valid_pixels", 20)
 
         self.bridge = CvBridge()
@@ -137,7 +137,7 @@ class RiskMonitor(Node):
         self.publish_result(state, nearest_distance)
 
     def check_staleness(self):
-        timeout = float(self.get_parameter("state_timeout_s").value)
+        timeout = float(self.get_parameter("stale_timeout_s").value)
         elapsed = (self.get_clock().now() - self.last_synchronized_input).nanoseconds / 1_000_000_000.0
 
         if elapsed > timeout:

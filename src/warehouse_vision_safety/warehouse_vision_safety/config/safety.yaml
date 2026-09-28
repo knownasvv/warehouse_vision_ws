@@ -1,0 +1,23 @@
+scenario_publisher:
+  ros__parameters:
+    rate_hz: 5.0
+    width: 640
+    height: 480
+    person_distance_m: 2.5
+    background_distance_m: 8.0
+    invalid_depth_every_n: 0
+    drop_depth_every_n: 0
+  
+  mock_person_detector:
+    ros__parameters:
+      center_x: 320.0
+      center_y: 250.0
+      size_x: 110.0
+      size_y: 250.0
+    
+  risk_monitor:
+    ros__parameters:
+      stop_distance_m: 1.0
+      slow_distance_m: 3.0
+      stale_timeout_s: 1.0
+      minimum_valid_pixels: 20
