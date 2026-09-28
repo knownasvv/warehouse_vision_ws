@@ -1,52 +1,55 @@
 import cv2
+from cv_bridge import CvBridge
+
 import numpy as np
+
 import rclpy
 
-from cv_bridge import CvBridge
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CameraInfo, Image
 
 
 class ScenarioPublisher(Node):
+
     def __init__(self):
-        super().__init__("scenario_publisher")
+        super().__init__('scenario_publisher')
 
-        self.declare_parameter("rate_hz", 5.0)
-        self.declare_parameter("width", 640)
-        self.declare_parameter("height", 480)
-        self.declare_parameter("person_distance_m", 2.5)
-        self.declare_parameter("background_distance_m", 8.0)
-        self.declare_parameter("invalid_depth_every_n", 0)
-        self.declare_parameter("drop_depth_every_n", 0)
+        self.declare_parameter('rate_hz', 5.0)
+        self.declare_parameter('width', 640)
+        self.declare_parameter('height', 480)
+        self.declare_parameter('person_distance_m', 2.5)
+        self.declare_parameter('background_distance_m', 8.0)
+        self.declare_parameter('invalid_depth_every_n', 0)
+        self.declare_parameter('drop_depth_every_n', 0)
 
-        self.width = self.get_parameter("width").value
-        self.height = self.get_parameter("height").value
+        self.width = self.get_parameter('width').value
+        self.height = self.get_parameter('height').value
         self.frame_count = 0
 
         self.bridge = CvBridge()
 
         self.color_publisher = self.create_publisher(
             Image,
-            "/sim_camera/color/image_raw",
+            '/sim_camera/color/image_raw',
             qos_profile_sensor_data,
         )
         self.depth_publisher = self.create_publisher(
             Image,
-            "/sim_camera/depth/image_raw",
+            '/sim_camera/depth/image_raw',
             qos_profile_sensor_data,
         )
         self.camera_info_publisher = self.create_publisher(
             CameraInfo,
-            "/sim_camera/color/camera_info",
+            '/sim_camera/color/camera_info',
             qos_profile_sensor_data,
         )
 
-        rate_hz = max(float(self.get_parameter("rate_hz").value), 0.1)
+        rate_hz = max(float(self.get_parameter('rate_hz').value), 0.1)
         self.timer = self.create_timer(1.0 / rate_hz, self.publish_frame)
 
         self.get_logger().info(
-            f"Publishing simulated RGB-D data at {rate_hz:.1f} Hz"
+            f'Publishing simulated RGB-D data at {rate_hz:.1f} Hz'
         )
 
     def create_rgb_image(self):
@@ -74,10 +77,10 @@ class ScenarioPublisher(Node):
             -1,
         )
 
-        distance = float(self.get_parameter("person_distance_m").value)
+        distance = float(self.get_parameter('person_distance_m').value)
         cv2.putText(
             image,
-            f"Simulated person: {distance:.2f} m",
+            f'Simulated person: {distance:.2f} m',
             (20, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
@@ -100,10 +103,10 @@ class ScenarioPublisher(Node):
         invalid_depth,
     ):
         background_distance = float(
-            self.get_parameter("background_distance_m").value
+            self.get_parameter('background_distance_m').value
         )
         person_distance = float(
-            self.get_parameter("person_distance_m").value
+            self.get_parameter('person_distance_m').value
         )
 
         depth = np.full(
@@ -128,7 +131,7 @@ class ScenarioPublisher(Node):
     def create_camera_info(self, stamp):
         message = CameraInfo()
         message.header.stamp = stamp
-        message.header.frame_id = "sim_camera_optical_frame"
+        message.header.frame_id = 'sim_camera_optical_frame'
         message.width = self.width
         message.height = self.height
 
@@ -153,10 +156,10 @@ class ScenarioPublisher(Node):
         self.frame_count += 1
 
         invalid_every = int(
-            self.get_parameter("invalid_depth_every_n").value
+            self.get_parameter('invalid_depth_every_n').value
         )
         drop_every = int(
-            self.get_parameter("drop_depth_every_n").value
+            self.get_parameter('drop_depth_every_n').value
         )
 
         invalid_depth = (
@@ -180,9 +183,9 @@ class ScenarioPublisher(Node):
 
         stamp = self.get_clock().now().to_msg()
 
-        color_message = self.bridge.cv2_to_imgmsg(rgb, encoding="bgr8")
+        color_message = self.bridge.cv2_to_imgmsg(rgb, encoding='bgr8')
         color_message.header.stamp = stamp
-        color_message.header.frame_id = "sim_camera_optical_frame"
+        color_message.header.frame_id = 'sim_camera_optical_frame'
 
         self.color_publisher.publish(color_message)
         self.camera_info_publisher.publish(
@@ -192,10 +195,10 @@ class ScenarioPublisher(Node):
         if not drop_depth:
             depth_message = self.bridge.cv2_to_imgmsg(
                 depth,
-                encoding="32FC1",
+                encoding='32FC1',
             )
             depth_message.header.stamp = stamp
-            depth_message.header.frame_id = "sim_camera_optical_frame"
+            depth_message.header.frame_id = 'sim_camera_optical_frame'
             self.depth_publisher.publish(depth_message)
 
 
@@ -212,5 +215,5 @@ def main(args=None):
         rclpy.shutdown()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
