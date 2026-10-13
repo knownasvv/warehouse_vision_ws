@@ -12,6 +12,7 @@ pytest.importorskip('cv_bridge')
 
 # Import ROS types after checking runtime availability.
 from rclpy.duration import Duration  # noqa: E402
+from rclpy.parameter import Parameter  # noqa: E402
 from rclpy.qos import ReliabilityPolicy  # noqa: E402
 from vision_msgs.msg import Detection2D, Detection2DArray  # noqa: E402
 from warehouse_vision_safety.risk_monitor import RiskMonitor  # noqa: E402
@@ -106,3 +107,20 @@ def test_simulated_depth_endpoints_request_reliable_delivery(monitor):
         )
     finally:
         publisher.destroy_node()
+
+
+def test_timing_diagnostics_are_disabled_by_default(monitor):
+    feed_frame(monitor, 2.5)
+    assert monitor._input_timing == {}
+    monitor.distance_publisher.publish.assert_called_once()
+
+
+def test_diagnostic_observer_does_not_publish_a_safety_result(monitor):
+    monitor.set_parameters([Parameter('diagnostics_enabled', value=True)])
+    depth = monitor.bridge.cv2_to_imgmsg(np.full((10, 10), 2.5, dtype=np.float32), '32FC1')
+    depth.header.stamp = monitor.get_clock().now().to_msg()
+    monitor.depth_subscriber.signalMessage(depth)
+    assert monitor._input_timing['depth']['count'] == 1
+    assert 'pairs' not in monitor._input_timing
+    monitor.state_publisher.publish.assert_not_called()
+    monitor.distance_publisher.publish.assert_not_called()

@@ -262,6 +262,32 @@ Completed suites produce `EVIDENCE_REPORT.md`; a `REVIEW` assessment makes the
 runner exit unsuccessfully. Fault scenarios require zero valid distance samples
 and at least one invalid distance sample. Do not discard earlier failed evidence.
 
+### Diagnose intermittent stale-input faults
+
+The risk monitor has optional timing diagnostics, disabled by default. Enable
+these on a running updated monitor with:
+
+```bash
+ros2 param set /risk_monitor diagnostics_enabled true
+```
+
+Capture about 20 seconds of `[DEBUG-risk-timing]` lines from the launch terminal,
+including any `SENSOR_FAULT` transition, then disable the diagnostics:
+
+```bash
+ros2 param set /risk_monitor diagnostics_enabled false
+```
+
+Each line reports a monotonic observation window, input and synchronized-pair
+counts, maximum arrival gaps, time since the last arrival, and maximum message
+age at receipt. Ages use the ROS clock; arrival gaps use a monotonic clock.
+`latest_stamp_delta_ms` compares the latest depth and detection timestamps, not
+necessarily a matched pair. `nan` age means no sample arrived in that window;
+`none` means that stream has not been observed since enabling diagnostics.
+Compare ROS and monotonic synchronized-input idle times to identify clock jumps.
+The diagnostics reuse the existing subscriptions and do not change safety
+thresholds, synchronization settings, or QoS.
+
 ### Measured results
 
 The SLOW row is from the completed 30-second trial at revision `cfddc41`

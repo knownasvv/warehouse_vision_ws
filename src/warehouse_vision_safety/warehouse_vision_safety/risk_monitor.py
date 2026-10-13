@@ -1,4 +1,5 @@
 import math
+from time import monotonic
 
 from cv_bridge import CvBridge
 
@@ -27,10 +28,14 @@ class RiskMonitor(Node):
         self.declare_parameter('slow_distance_m', 3.0)
         self.declare_parameter('stale_timeout_s', 1.0)
         self.declare_parameter('minimum_valid_pixels', 20)
+        self.declare_parameter('diagnostics_enabled', False)
 
         self.bridge = CvBridge()
         self.last_synchronized_input = self.get_clock().now()
         self.last_state = None
+        self._last_sync_monotonic = monotonic()
+        self._last_timing_report = monotonic()
+        self._input_timing = {}
 
         self.state_publisher = self.create_publisher(
             String,
@@ -59,6 +64,10 @@ class RiskMonitor(Node):
             '/perception/person_detections',
             qos_profile=qos_profile_sensor_data
         )
+
+        # Observe the existing subscriptions without creating extra image traffic.
+        self.depth_subscriber.registerCallback(self._track_input, 'depth')
+        self.detection_subscriber.registerCallback(self._track_input, 'detections')
 
         self.synchronizer = message_filters.ApproximateTimeSynchronizer(
             [self.depth_subscriber, self.detection_subscriber],
@@ -94,6 +103,8 @@ class RiskMonitor(Node):
         detections_message,
     ):
         self.last_synchronized_input = self.get_clock().now()
+        self._last_sync_monotonic = monotonic()
+        self._track_input(depth_message, 'pairs')
 
         try:
             depth_image = self.bridge.imgmsg_to_cv2(
@@ -146,6 +157,61 @@ class RiskMonitor(Node):
 
         self.publish_result(state, distance=nearest_distance)
 
+    def _track_input(self, message, name):
+        if not self.get_parameter('diagnostics_enabled').value or message is None:
+            return
+        now = monotonic()
+        previous = self._input_timing.get(name)
+        gap_ms = 0.0 if previous is None else (now - previous['arrival']) * 1000.0
+        stamp = message.header.stamp
+        stamp_ns = stamp.sec * 1_000_000_000 + stamp.nanosec
+        age_ms = (self.get_clock().now().nanoseconds - stamp_ns) / 1_000_000.0
+        previous = previous or {}
+        self._input_timing[name] = {
+            'arrival': now,
+            'stamp_ns': stamp_ns,
+            'count': previous.get('count', 0) + 1,
+            'max_gap_ms': max(previous.get('max_gap_ms', 0.0), gap_ms),
+            'max_age_ms': max(previous.get('max_age_ms', age_ms), age_ms),
+        }
+
+    def _log_input_timing(self, ros_elapsed):
+        if not self.get_parameter('diagnostics_enabled').value:
+            self._input_timing.clear()
+            self._last_timing_report = monotonic()
+            return
+        now = monotonic()
+        if now - self._last_timing_report < 1.0:
+            return
+        window = now - self._last_timing_report
+        self._last_timing_report = now
+        parts = []
+        for name in ('depth', 'detections', 'pairs'):
+            sample = self._input_timing.get(name)
+            if sample is None:
+                parts.append(f'{name}=none')
+                continue
+            parts.append(
+                f"{name}[n={sample['count']} "
+                f"idle_ms={(now - sample['arrival']) * 1000.0:.1f} "
+                f"max_gap_ms={sample['max_gap_ms']:.1f} "
+                f"max_age_ms={sample.get('max_age_ms', math.nan):.1f}]"
+            )
+            sample['count'] = 0
+            sample['max_gap_ms'] = 0.0
+            sample.pop('max_age_ms', None)
+        depth = self._input_timing.get('depth')
+        detections = self._input_timing.get('detections')
+        stamp_delta = math.nan
+        if depth is not None and detections is not None:
+            stamp_delta = (depth['stamp_ns'] - detections['stamp_ns']) / 1_000_000.0
+        self.get_logger().info(
+            f'[DEBUG-risk-timing] window_s={window:.2f} '
+            f'sync_idle_ros_ms={ros_elapsed * 1000.0:.1f} '
+            f'sync_idle_mono_ms={(now - self._last_sync_monotonic) * 1000.0:.1f} '
+            f'latest_stamp_delta_ms={stamp_delta:.1f} ' + ' '.join(parts)
+        )
+
     def check_staleness(self):
         timeout = float(self.get_parameter('stale_timeout_s').value)
         elapsed = (self.get_clock().now() -
@@ -153,6 +219,8 @@ class RiskMonitor(Node):
 
         if elapsed > timeout:
             self.publish_result('SENSOR_FAULT', reason='synchronized input is stale')
+
+        self._log_input_timing(elapsed)
 
 
 def main(args=None):
