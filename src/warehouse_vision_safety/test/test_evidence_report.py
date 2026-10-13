@@ -72,3 +72,20 @@ def test_mixed_recordings_retain_backend_labels(summary):
     old['detector']['backend'] = 'OpenCV DNN CPU'
     text = report.build_report([old, summary], '')
     assert '| Recorded inference backend | ONNX Runtime CPU, OpenCV DNN CPU |' in text
+
+
+@pytest.mark.parametrize('name', ['04_invalid_depth', '05_missing_depth'])
+@pytest.mark.parametrize('valid_count,invalid_count,expected', [
+    (0, 60, 'PASS'), (1, 60, 'REVIEW'), (0, 0, 'REVIEW'),
+])
+def test_fault_trials_require_invalid_distances(
+    summary, name, valid_count, invalid_count, expected
+):
+    summary['scenario_name'] = name
+    summary['expected_state'] = 'SENSOR_FAULT'
+    summary['safety']['state_counts'] = {'SENSOR_FAULT': 60}
+    summary['depth'] = {
+        'distance_m': {'count': valid_count, 'mean': None if valid_count == 0 else 2.5},
+        'invalid_distance_messages': invalid_count,
+    }
+    assert report.scenario_assessment(summary) == expected

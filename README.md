@@ -205,30 +205,71 @@ distance counts and retains each recording's backend label. Existing summaries
 may contain the old incorrect OpenCV DNN label; regenerating a report does not
 repair their metadata or turn failed trials into passing evidence.
 
-Start the AI replay pipeline, then run:
+### Run all six replay scenarios
+
+Build from the workspace root. Do not build inside `src/warehouse_vision_safety`;
+a nested installation can cause tests to import outdated code.
+
+In terminal 1, after building `install_verified`, start one replay pipeline:
 
 ```bash
-./src/warehouse_vision_safety/scripts/run_evaluation_suite.sh \
-  15.0 \
-  results/evaluation_suite
+cd ~/Documents/ros2/projects/warehouse_vision_ws
+unset PYTHONPATH AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH
+source /opt/ros/jazzy/setup.bash
+source install_verified/local_setup.bash
+export WAREHOUSE_VISION_PYTHON="$PWD/.venv/bin/python"
+ros2 launch warehouse_vision_safety ai_replay.launch.py
 ```
 
-The suite evaluates:
+Stop any older replay, mock detector, or scenario publisher first. Leave terminal 1
+running. In terminal 2, source the same verified installation and record 30 seconds
+per scenario:
+
+```bash
+cd ~/Documents/ros2/projects/warehouse_vision_ws
+unset PYTHONPATH AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH
+source /opt/ros/jazzy/setup.bash
+source install_verified/local_setup.bash
+export WAREHOUSE_VISION_PYTHON="$PWD/.venv/bin/python"
+mkdir -p results
+colcon test-result --test-result-base build_verified --verbose \
+  > results/colcon_test_result.txt
+
+./src/warehouse_vision_safety/scripts/run_evaluation_suite.sh 30.0 \
+  --test-result results/colcon_test_result.txt
+```
+
+The script creates a new timestamped results directory and prints its location.
+An optional second positional argument specifies a directory; it must not already
+exist. The suite takes at least three minutes and evaluates:
 
 1. `SLOW` at 2.5 m
 2. `STOP` at 0.8 m
 3. `CLEAR` at 4.0 m
-4. Corrupted all-NaN depth
-5. Missing depth messages
-6. Recovery after a sensor fault
+4. All-NaN depth, expecting `SENSOR_FAULT`
+5. Missing depth messages, expecting `SENSOR_FAULT`
+6. Restored depth at 2.5 m, expecting `SLOW` without restarting the nodes
+
+The runner owns parameter changes and recordings; the launch process owns the
+three running nodes. Before testing missing depth, the runner confirms `SLOW`
+with valid depth, so an earlier fault cannot satisfy that transition. Each
+recording starts after observing its expected state. These are steady-state
+measurements, not measurements of fault/recovery response time.
+
+Original replay parameters are restored on completion or failure. Failed commands
+and state waits stop the suite, with partial recordings and `suite.log` preserved.
+Completed suites produce `EVIDENCE_REPORT.md`; a `REVIEW` assessment makes the
+runner exit unsuccessfully. Fault scenarios require zero valid distance samples
+and at least one invalid distance sample. Do not discard earlier failed evidence.
 
 ### Measured results
 
-These values must be replaced with the actual generated measurements.
+The SLOW row is from the completed 30-second trial at revision `cfddc41`
+(`results/evaluation_20261013_171526`). The remaining rows await Ubuntu replay results.
 
 | Scenario | Detection rate | State agreement | Mean distance | Mean inference | P95 inference |
 |---|---:|---:|---:|---:|---:|
-| SLOW, 2.5 m | PENDING | PENDING | PENDING | PENDING | PENDING |
+| SLOW, 2.5 m | 100.0% | 100.0% | 2.500 m | 49.1 ms | 74.3 ms |
 | STOP, 0.8 m | PENDING | PENDING | PENDING | PENDING | PENDING |
 | CLEAR, 4.0 m | PENDING | PENDING | PENDING | PENDING | PENDING |
 | Invalid depth | PENDING | PENDING | N/A | PENDING | PENDING |
@@ -238,7 +279,7 @@ These values must be replaced with the actual generated measurements.
 Raw summaries and latency samples are stored under:
 
 ```text
-results/evaluation_suite/
+results/evaluation_suite_<timestamp>/
 ```
 
 ## Design decisions

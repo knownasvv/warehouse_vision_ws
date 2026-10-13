@@ -92,6 +92,13 @@ def scenario_assessment(summary):
             and abs(mean_distance - expected_distance) <= 0.10
         )
 
+    if name in ('04_invalid_depth', '05_missing_depth'):
+        checks.extend([
+            summary['expected_state'] == 'SENSOR_FAULT',
+            summary['depth']['distance_m']['count'] == 0,
+            summary['depth']['invalid_distance_messages'] > 0,
+        ])
+
     return 'PASS' if all(checks) else 'REVIEW'
 
 
@@ -198,6 +205,8 @@ def build_report(summaries, test_result_text):
             '- Recording must have completed.',
             '- Detection rate: at least 95%.',
             '- Expected safety-state agreement: at least 95%.',
+            '- Invalid/missing-depth trials must report SENSOR_FAULT, '
+            'no valid distances, and at least one invalid distance.',
             '- Normal-scenario mean distance: within 0.10 m of '
             'the configured synthetic distance.',
             '- Inference latency is reported rather than hidden; '
