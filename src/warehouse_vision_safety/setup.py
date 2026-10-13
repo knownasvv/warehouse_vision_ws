@@ -17,6 +17,7 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.[pxy][yma]*')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml*')),
         (os.path.join('share', package_name, 'models'), glob('models/*.onnx')),
+        (os.path.join('share', package_name, 'test_data'), glob('test_data/*.jpg')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -35,6 +36,7 @@ setup(
             'mock_person_detector = warehouse_vision_safety.mock_person_detector:main',
             'risk_monitor = warehouse_vision_safety.risk_monitor:main',
             'ai_person_detector = warehouse_vision_safety.ai_person_detector:main',
+            'rgbd_replay_publisher = warehouse_vision_safety.rgbd_replay_publisher:main'
         ],
     },
 )

@@ -28,3 +28,11 @@ scenario_publisher:
       nms_threshold: 0.45
       input_size: 640
       publish_debug_image: true
+
+  rgbd_replay_publisher:
+    ros__parameters:
+      rate_hz: 2.0
+      person_distance_m: 2.5
+      background_distance_m: 8.0
+      invalid_depth_every_n: 0
+      drop_depth_every_n: 0
