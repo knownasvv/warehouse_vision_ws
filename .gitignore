@@ -1,5 +1,7 @@
 build/
+build_verified/
 install/
+install_verified/
 log/
 __pycache__/
 *.pyc
