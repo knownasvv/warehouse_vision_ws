@@ -1,21 +1,17 @@
 from pathlib import Path
 from time import perf_counter
 
-import cv2
-import numpy as np
-import rclpy
 from ament_index_python.packages import get_package_share_directory
+import cv2
 from cv_bridge import CvBridge
+import numpy as np
+import onnxruntime as ort
+import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
-from vision_msgs.msg import (
-    Detection2D,
-    Detection2DArray,
-    ObjectHypothesisWithPose
-)
-import onnxruntime as ort
+from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 
 
 class AIPersonDetector(Node):
@@ -36,10 +32,14 @@ class AIPersonDetector(Node):
         self.declare_parameter('publish_debug_image', True)
 
         self.model_path = self.get_parameter('model_path').get_parameter_value().string_value
-        self.confidence_threshold = self.get_parameter('confidence_threshold').get_parameter_value().double_value
+        self.confidence_threshold = (
+            self.get_parameter('confidence_threshold').get_parameter_value().double_value
+        )
         self.nms_threshold = self.get_parameter('nms_threshold').get_parameter_value().double_value
         self.input_size = self.get_parameter('input_size').get_parameter_value().integer_value
-        self.publish_debug_image = self.get_parameter('publish_debug_image').get_parameter_value().bool_value
+        self.publish_debug_image = (
+            self.get_parameter('publish_debug_image').get_parameter_value().bool_value
+        )
 
         if not Path(self.model_path).is_file():
             raise FileNotFoundError(f'YOLO model was not found at: {self.model_path}')
@@ -56,7 +56,7 @@ class AIPersonDetector(Node):
         self.bridge = CvBridge()
 
         self.session = ort.InferenceSession(
-        self.model_path,
+            self.model_path,
             providers=['CPUExecutionProvider'],
         )
         self.input_name = self.session.get_inputs()[0].name
@@ -123,8 +123,8 @@ class AIPersonDetector(Node):
         pad_y = (self.input_size - resized_height) // 2
 
         padded[
-            pad_y : pad_y + resized_height,
-            pad_x : pad_x + resized_width,
+            pad_y:pad_y + resized_height,
+            pad_x:pad_x + resized_width,
         ] = resized
 
         return padded, scale, pad_x, pad_y

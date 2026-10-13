@@ -40,7 +40,10 @@ class ScenarioPublisher(Node):
         self.depth_publisher = self.create_publisher(
             Image,
             '/sim_camera/depth/image_raw',
-            qos_profile_sensor_data,
+            QoSProfile(
+                depth=10,
+                reliability=ReliabilityPolicy.RELIABLE,
+            ),
         )
         self.camera_info_publisher = self.create_publisher(
             CameraInfo,

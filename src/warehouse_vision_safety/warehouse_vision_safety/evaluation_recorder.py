@@ -210,7 +210,7 @@ class EvaluationRecorder(Node):
             'elapsed_s': elapsed_s,
             'detector': {
                 'model': 'YOLO11n ONNX',
-                'backend': 'OpenCV DNN CPU',
+                'backend': 'ONNX Runtime CPU',
                 'detection_messages': self.detection_message_count,
                 'frames_with_person': self.frames_with_person,
                 'detection_rate_percent': detection_rate,

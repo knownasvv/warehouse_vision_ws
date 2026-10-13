@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 EXPECTED_DISTANCES = {
+    "ai_replay_slow_2_5m": 2.5,
     "01_slow_2_5m": 2.5,
     "02_stop_0_8m": 0.8,
     "03_clear_4_0m": 4.0,
@@ -78,6 +79,7 @@ def scenario_assessment(summary):
     mean_distance = summary["depth"]["distance_m"]["mean"]
 
     checks = [
+        summary.get("status") == "completed",
         detection_rate >= 95.0,
         state_agreement >= 95.0,
     ]
@@ -95,6 +97,10 @@ def scenario_assessment(summary):
 
 def build_report(summaries, test_result_text):
     generated_at = datetime.now(timezone.utc).isoformat()
+    backends = sorted({
+        summary["detector"].get("backend", "unavailable")
+        for summary in summaries
+    })
 
     lines = [
         "# Project Evidence Report",
@@ -113,7 +119,7 @@ def build_report(summaries, test_result_text):
         f"| Memory | {memory_total_gib()} |",
         f"| Python | {platform.python_version()} |",
         f"| OpenCV | {opencv_version()} |",
-        "| Inference backend | OpenCV DNN CPU |",
+        f"| Recorded inference backend | {', '.join(backends)} |",
         "| Model | YOLO11n ONNX |",
         "",
         "## Evaluation results",
@@ -159,6 +165,11 @@ def build_report(summaries, test_result_text):
                 f"### {summary['scenario_name']}",
                 "",
                 f"- Expected state: `{summary['expected_state']}`",
+                f"- Recording status: `{summary.get('status', 'unavailable')}`",
+                (
+                    "- Recorded inference backend: "
+                    f"{summary['detector'].get('backend', 'unavailable')}"
+                ),
                 f"- State observations: {state_text or 'None'}",
                 (
                     "- Person detection messages: "
@@ -167,6 +178,10 @@ def build_report(summaries, test_result_text):
                 (
                     "- Frames containing a detected person: "
                     f"{summary['detector']['frames_with_person']}"
+                ),
+                (
+                    "- Valid distance messages: "
+                    f"{summary['depth']['distance_m']['count']}"
                 ),
                 (
                     "- Invalid distance messages: "
@@ -180,6 +195,7 @@ def build_report(summaries, test_result_text):
         [
             "## Acceptance criteria",
             "",
+            "- Recording must have completed.",
             "- Detection rate: at least 95%.",
             "- Expected safety-state agreement: at least 95%.",
             "- Normal-scenario mean distance: within 0.10 m of "
@@ -197,6 +213,14 @@ def build_report(summaries, test_result_text):
             "## Interpretation constraints",
             "",
             "- Results apply to the deterministic replay scenario.",
+            (
+                "- Distance statistics include only valid samples; compare the "
+                "valid and invalid message counts before interpreting the mean."
+            ),
+            (
+                "- Backend labels come from recorded summaries; older recordings "
+                "may contain incorrect labels and are not rewritten by this report."
+            ),
             "- The depth map is synthetic and manually aligned with the image.",
             "- Detection success on one replay image does not establish "
             "general real-world accuracy.",

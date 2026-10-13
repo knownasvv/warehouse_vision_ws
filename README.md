@@ -2,7 +2,7 @@
 
 A simulation-only ROS 2 perception project that combines pretrained person detection with aligned depth data to estimate human proximity and produce fail-safe safety states.
 
-The system uses YOLO11n through OpenCV DNN for RGB person detection, extracts the median valid depth inside each detected bounding box, and publishes one of four states:
+The system uses YOLO11n through ONNX Runtime for RGB person detection, extracts the median valid depth inside each detected bounding box, and publishes one of four states:
 
 - `CLEAR`
 - `SLOW`
@@ -34,7 +34,7 @@ flowchart LR
 | Node | Responsibility |
 |---|---|
 | `rgbd_replay_publisher` | Publishes a repeatable RGB image and aligned synthetic depth map |
-| `ai_person_detector` | Runs YOLO11n ONNX inference with OpenCV DNN |
+| `ai_person_detector` | Runs YOLO11n ONNX inference with ONNX Runtime |
 | `risk_monitor` | Fuses detections and depth and determines the safety state |
 | `evaluation_recorder` | Records detection, distance, state and latency statistics |
 | `scenario_publisher` | Publishes the earlier geometric test scenario |
@@ -74,7 +74,7 @@ The project was developed using:
 - ARM64 UTM/QEMU virtual machine
 - 6 virtual CPU cores
 - 8 GB memory
-- CPU-only OpenCV DNN inference
+- CPU-only ONNX Runtime inference
 - No physical robot or camera hardware
 
 ## Quick start
@@ -88,11 +88,24 @@ sudo apt update
 sudo apt install -y \
   python3-opencv \
   python3-pytest \
+  python3-venv \
   wget \
   ros-jazzy-cv-bridge \
   ros-jazzy-vision-msgs \
   ros-jazzy-message-filters
 ```
+
+From the workspace root, install inference dependencies in a virtual environment
+that can use the system OpenCV and ROS packages:
+
+```bash
+/usr/bin/python3 -m venv --system-site-packages .venv
+touch .venv/COLCON_IGNORE
+.venv/bin/python -m pip install "numpy<2" onnxruntime
+```
+
+OpenCV handles image conversion, preprocessing and NMS. ONNX Runtime handles
+model execution. Use the system OpenCV supplied with ROS's `cv_bridge`.
 
 ### Download the model and replay image
 
@@ -127,6 +140,7 @@ source install/setup.bash
 ### Launch the AI pipeline
 
 ```bash
+export WAREHOUSE_VISION_PYTHON="$PWD/.venv/bin/python"
 ros2 launch warehouse_vision_safety ai_replay.launch.py
 ```
 
@@ -171,6 +185,26 @@ The unit tests cover:
 
 ## Evaluation
 
+Preserve earlier failed results. To record a fresh SLOW trial after starting the
+replay pipeline and confirming `/safety/state` is `SLOW`, use a new output directory:
+
+```bash
+ros2 run warehouse_vision_safety evaluation_recorder --ros-args \
+  -p duration_s:=30.0 \
+  -p scenario_name:=ai_replay_slow_2_5m \
+  -p expected_state:=SLOW \
+  -p output_directory:=results/evaluation_suite_fixed/ai_replay_slow_2_5m
+
+.venv/bin/python src/warehouse_vision_safety/scripts/build_evidence_report.py \
+  --results-root results/evaluation_suite_fixed \
+  --output results/EVIDENCE_REPORT_fixed.md
+```
+
+New summaries identify ONNX Runtime CPU. The report shows both valid and invalid
+distance counts and retains each recording's backend label. Existing summaries
+may contain the old incorrect OpenCV DNN label; regenerating a report does not
+repair their metadata or turn failed trials into passing evidence.
+
 Start the AI replay pipeline, then run:
 
 ```bash
@@ -209,13 +243,21 @@ results/evaluation_suite/
 
 ## Design decisions
 
-### ONNX with OpenCV DNN
+### ONNX with ONNX Runtime
 
-YOLO11n is executed as an ONNX model through OpenCV DNN. This avoids a large PyTorch runtime and is suitable for the CPU-only ARM64 virtual machine.
+YOLO11n is executed as an ONNX model through ONNX Runtime. This avoids a large PyTorch runtime and is suitable for the CPU-only ARM64 virtual machine.
 
 ### Median depth rather than one pixel
 
 The risk monitor uses the median of valid depth pixels inside each detected person box. A single center pixel can fall on the background, clothing edge or an invalid depth location. The median is more resistant to isolated outliers.
+
+### Reliable simulated depth delivery
+
+The replay publisher and risk monitor use reliable depth QoS with a bounded
+queue. The geometric scenario publisher uses the same reliability so both
+launch modes remain compatible. Synchronization still uses the original frame
+timestamps, a 0.1-second matching window, and a 1-second stale-input timeout.
+Reliable delivery can add latency; validate freshness on the target VM.
 
 ### Explicit fault state
 

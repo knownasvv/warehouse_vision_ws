@@ -1,0 +1,1672 @@
+diff --git a/src/warehouse_vision_safety/launch/ai_replay.launch.py b/src/warehouse_vision_safety/launch/ai_replay.launch.py
+index c8f47db..ba26d8d 100644
+--- a/src/warehouse_vision_safety/launch/ai_replay.launch.py
++++ b/src/warehouse_vision_safety/launch/ai_replay.launch.py
+@@ -2,8 +2,8 @@ import os
+ 
+ from ament_index_python.packages import get_package_share_directory
+ from launch import LaunchDescription
+-from launch_ros.actions import Node
+ from launch.substitutions import EnvironmentVariable
++from launch_ros.actions import Node
+ 
+ 
+ def generate_launch_description():
+@@ -18,22 +18,22 @@ def generate_launch_description():
+                 executable='rgbd_replay_publisher',
+                 name='rgbd_replay_publisher',
+                 parameters=[config_path],
+-                output='screen'
++                output='screen',
+             ),
+             Node(
+-                package="warehouse_vision_safety",
+-                executable="ai_person_detector",
+-                name="ai_person_detector",
++                package='warehouse_vision_safety',
++                executable='ai_person_detector',
++                name='ai_person_detector',
+                 parameters=[config_path],
+-                output="screen",
+-                prefix=[EnvironmentVariable('WAREHOUSE_VISION_PYTHON')]
++                output='screen',
++                prefix=[EnvironmentVariable('WAREHOUSE_VISION_PYTHON')],
+             ),
+             Node(
+-                package="warehouse_vision_safety",
+-                executable="risk_monitor",
+-                name="risk_monitor",
++                package='warehouse_vision_safety',
++                executable='risk_monitor',
++                name='risk_monitor',
+                 parameters=[config_path],
+-                output="screen",
++                output='screen',
+             ),
+         ]
+-    )
+\ No newline at end of file
++    )
+diff --git a/src/warehouse_vision_safety/launch/perception.launch.py b/src/warehouse_vision_safety/launch/perception.launch.py
+index c6cf96d..03541e8 100644
+--- a/src/warehouse_vision_safety/launch/perception.launch.py
++++ b/src/warehouse_vision_safety/launch/perception.launch.py
+@@ -15,7 +15,7 @@ def generate_launch_description():
+     config_argument = DeclareLaunchArgument(
+         'config',
+         default_value=default_config,
+-        description='Path to the perception configuration file'
++        description='Path to the perception configuration file',
+     )
+     config = LaunchConfiguration('config')
+ 
+@@ -24,7 +24,7 @@ def generate_launch_description():
+         executable='scenario_publisher',
+         name='scenario_publisher',
+         output='screen',
+-        parameters=[config]
++        parameters=[config],
+     )
+ 
+     mock_detector = Node(
+@@ -32,7 +32,7 @@ def generate_launch_description():
+         executable='mock_person_detector',
+         name='mock_person_detector',
+         output='screen',
+-        parameters=[config]
++        parameters=[config],
+     )
+ 
+     risk_monitor = Node(
+@@ -40,14 +40,7 @@ def generate_launch_description():
+         executable='risk_monitor',
+         name='risk_monitor',
+         output='screen',
+-        parameters=[config]
++        parameters=[config],
+     )
+ 
+-    return LaunchDescription(
+-        [
+-            config_argument,
+-            scenario_publisher,
+-            mock_detector,
+-            risk_monitor
+-        ]
+-    )
++    return LaunchDescription([config_argument, scenario_publisher, mock_detector, risk_monitor])
+diff --git a/src/warehouse_vision_safety/scripts/build_evidence_report.py b/src/warehouse_vision_safety/scripts/build_evidence_report.py
+index e780865..35dd6c6 100755
+--- a/src/warehouse_vision_safety/scripts/build_evidence_report.py
++++ b/src/warehouse_vision_safety/scripts/build_evidence_report.py
+@@ -1,33 +1,33 @@
+ #!/usr/bin/env python3
+ 
+ import argparse
++from datetime import datetime
++from datetime import timezone
+ import json
+ import os
++from pathlib import Path
+ import platform
+ import subprocess
+-from datetime import datetime, timezone
+-from pathlib import Path
+-
+ 
+ EXPECTED_DISTANCES = {
+-    "ai_replay_slow_2_5m": 2.5,
+-    "01_slow_2_5m": 2.5,
+-    "02_stop_0_8m": 0.8,
+-    "03_clear_4_0m": 4.0,
+-    "06_recovery_2_5m": 2.5,
++    'ai_replay_slow_2_5m': 2.5,
++    '01_slow_2_5m': 2.5,
++    '02_stop_0_8m': 0.8,
++    '03_clear_4_0m': 4.0,
++    '06_recovery_2_5m': 2.5,
+ }
+ 
+ 
+-def format_number(value, decimals=2, suffix=""):
++def format_number(value, decimals=2, suffix=''):
+     if value is None:
+-        return "N/A"
++        return 'N/A'
+ 
+-    return f"{value:.{decimals}f}{suffix}"
++    return f'{value:.{decimals}f}{suffix}'
+ 
+ 
+ def git_revision():
+     result = subprocess.run(
+-        ["git", "rev-parse", "--short", "HEAD"],
++        ['git', 'rev-parse', '--short', 'HEAD'],
+         capture_output=True,
+         text=True,
+         check=False,
+@@ -36,21 +36,21 @@ def git_revision():
+     if result.returncode == 0:
+         return result.stdout.strip()
+ 
+-    return "unavailable"
++    return 'unavailable'
+ 
+ 
+ def memory_total_gib():
+-    meminfo = Path("/proc/meminfo")
++    meminfo = Path('/proc/meminfo')
+ 
+     if not meminfo.exists():
+-        return "unavailable"
++        return 'unavailable'
+ 
+-    for line in meminfo.read_text(encoding="utf-8").splitlines():
+-        if line.startswith("MemTotal:"):
++    for line in meminfo.read_text(encoding='utf-8').splitlines():
++        if line.startswith('MemTotal:'):
+             kibibytes = int(line.split()[1])
+-            return f"{kibibytes / 1024 / 1024:.2f} GiB"
++            return f'{kibibytes / 1024 / 1024:.2f} GiB'
+ 
+-    return "unavailable"
++    return 'unavailable'
+ 
+ 
+ def opencv_version():
+@@ -59,27 +59,27 @@ def opencv_version():
+ 
+         return cv2.__version__
+     except ImportError:
+-        return "unavailable"
++        return 'unavailable'
+ 
+ 
+ def load_summaries(results_root):
+     summaries = []
+ 
+-    for summary_path in sorted(results_root.glob("*/summary.json")):
+-        with summary_path.open(encoding="utf-8") as file:
++    for summary_path in sorted(results_root.glob('*/summary.json')):
++        with summary_path.open(encoding='utf-8') as file:
+             summaries.append(json.load(file))
+ 
+     return summaries
+ 
+ 
+ def scenario_assessment(summary):
+-    name = summary["scenario_name"]
+-    detection_rate = summary["detector"]["detection_rate_percent"]
+-    state_agreement = summary["safety"]["state_agreement_percent"]
+-    mean_distance = summary["depth"]["distance_m"]["mean"]
++    name = summary['scenario_name']
++    detection_rate = summary['detector']['detection_rate_percent']
++    state_agreement = summary['safety']['state_agreement_percent']
++    mean_distance = summary['depth']['distance_m']['mean']
+ 
+     checks = [
+-        summary.get("status") == "completed",
++        summary.get('status') == 'completed',
+         detection_rate >= 95.0,
+         state_agreement >= 95.0,
+     ]
+@@ -87,192 +87,170 @@ def scenario_assessment(summary):
+     expected_distance = EXPECTED_DISTANCES.get(name)
+ 
+     if expected_distance is not None:
+-        checks.append(
+-            mean_distance is not None
+-            and abs(mean_distance - expected_distance) <= 0.10
+-        )
++        checks.append(mean_distance is not None and abs(mean_distance - expected_distance) <= 0.10)
+ 
+-    return "PASS" if all(checks) else "REVIEW"
++    return 'PASS' if all(checks) else 'REVIEW'
+ 
+ 
+ def build_report(summaries, test_result_text):
+     generated_at = datetime.now(timezone.utc).isoformat()
+-    backends = sorted({
+-        summary["detector"].get("backend", "unavailable")
+-        for summary in summaries
+-    })
++    backends = sorted({summary['detector'].get('backend', 'unavailable') for summary in summaries})
+ 
+     lines = [
+-        "# Project Evidence Report",
+-        "",
+-        f"Generated: `{generated_at}`",
+-        f"Git revision: `{git_revision()}`",
+-        "",
+-        "## Environment",
+-        "",
+-        "| Property | Value |",
+-        "|---|---|",
+-        f"| ROS distribution | {os.environ.get('ROS_DISTRO', 'unavailable')} |",
+-        f"| Operating system | {platform.platform()} |",
+-        f"| Architecture | {platform.machine()} |",
+-        f"| Kernel | {platform.release()} |",
+-        f"| Memory | {memory_total_gib()} |",
+-        f"| Python | {platform.python_version()} |",
+-        f"| OpenCV | {opencv_version()} |",
+-        f"| Recorded inference backend | {', '.join(backends)} |",
+-        "| Model | YOLO11n ONNX |",
+-        "",
+-        "## Evaluation results",
+-        "",
+-        "| Scenario | Detect % | State % | Mean depth | "
+-        "Mean latency | P95 latency | Assessment |",
+-        "|---|---:|---:|---:|---:|---:|---|",
++        '# Project Evidence Report',
++        '',
++        f'Generated: `{generated_at}`',
++        f'Git revision: `{git_revision()}`',
++        '',
++        '## Environment',
++        '',
++        '| Property | Value |',
++        '|---|---|',
++        f'| ROS distribution | {os.environ.get("ROS_DISTRO", "unavailable")} |',
++        f'| Operating system | {platform.platform()} |',
++        f'| Architecture | {platform.machine()} |',
++        f'| Kernel | {platform.release()} |',
++        f'| Memory | {memory_total_gib()} |',
++        f'| Python | {platform.python_version()} |',
++        f'| OpenCV | {opencv_version()} |',
++        f'| Recorded inference backend | {", ".join(backends)} |',
++        '| Model | YOLO11n ONNX |',
++        '',
++        '## Evaluation results',
++        '',
++        '| Scenario | Detect % | State % | Mean depth | Mean latency | P95 latency | Assessment |',
++        '|---|---:|---:|---:|---:|---:|---|',
+     ]
+ 
+     for summary in summaries:
+-        detector = summary["detector"]
+-        safety = summary["safety"]
+-        depth = summary["depth"]["distance_m"]
+-        latency = summary["performance"]["inference_time_ms"]
++        detector = summary['detector']
++        safety = summary['safety']
++        depth = summary['depth']['distance_m']
++        latency = summary['performance']['inference_time_ms']
+ 
+         lines.append(
+-            f"| {summary['scenario_name']} "
+-            f"| {format_number(detector['detection_rate_percent'], 1, '%')} "
+-            f"| {format_number(safety['state_agreement_percent'], 1, '%')} "
+-            f"| {format_number(depth['mean'], 3, ' m')} "
+-            f"| {format_number(latency['mean'], 1, ' ms')} "
+-            f"| {format_number(latency['p95'], 1, ' ms')} "
+-            f"| {scenario_assessment(summary)} |"
++            f'| {summary["scenario_name"]} '
++            f'| {format_number(detector["detection_rate_percent"], 1, "%")} '
++            f'| {format_number(safety["state_agreement_percent"], 1, "%")} '
++            f'| {format_number(depth["mean"], 3, " m")} '
++            f'| {format_number(latency["mean"], 1, " ms")} '
++            f'| {format_number(latency["p95"], 1, " ms")} '
++            f'| {scenario_assessment(summary)} |'
+         )
+ 
+     lines.extend(
+         [
+-            "",
+-            "## Scenario details",
+-            "",
++            '',
++            '## Scenario details',
++            '',
+         ]
+     )
+ 
+     for summary in summaries:
+-        state_counts = summary["safety"]["state_counts"]
+-        state_text = ", ".join(
+-            f"`{state}`: {count}"
+-            for state, count in sorted(state_counts.items())
++        state_counts = summary['safety']['state_counts']
++        state_text = ', '.join(
++            f'`{state}`: {count}' for state, count in sorted(state_counts.items())
+         )
+ 
+         lines.extend(
+             [
+-                f"### {summary['scenario_name']}",
+-                "",
+-                f"- Expected state: `{summary['expected_state']}`",
+-                f"- Recording status: `{summary.get('status', 'unavailable')}`",
+-                (
+-                    "- Recorded inference backend: "
+-                    f"{summary['detector'].get('backend', 'unavailable')}"
+-                ),
+-                f"- State observations: {state_text or 'None'}",
++                f'### {summary["scenario_name"]}',
++                '',
++                f'- Expected state: `{summary["expected_state"]}`',
++                f'- Recording status: `{summary.get("status", "unavailable")}`',
+                 (
+-                    "- Person detection messages: "
+-                    f"{summary['detector']['detection_messages']}"
++                    '- Recorded inference backend: '
++                    f'{summary["detector"].get("backend", "unavailable")}'
+                 ),
++                f'- State observations: {state_text or "None"}',
++                (f'- Person detection messages: {summary["detector"]["detection_messages"]}'),
+                 (
+-                    "- Frames containing a detected person: "
+-                    f"{summary['detector']['frames_with_person']}"
++                    '- Frames containing a detected person: '
++                    f'{summary["detector"]["frames_with_person"]}'
+                 ),
+-                (
+-                    "- Valid distance messages: "
+-                    f"{summary['depth']['distance_m']['count']}"
+-                ),
+-                (
+-                    "- Invalid distance messages: "
+-                    f"{summary['depth']['invalid_distance_messages']}"
+-                ),
+-                "",
++                (f'- Valid distance messages: {summary["depth"]["distance_m"]["count"]}'),
++                (f'- Invalid distance messages: {summary["depth"]["invalid_distance_messages"]}'),
++                '',
+             ]
+         )
+ 
+     lines.extend(
+         [
+-            "## Acceptance criteria",
+-            "",
+-            "- Recording must have completed.",
+-            "- Detection rate: at least 95%.",
+-            "- Expected safety-state agreement: at least 95%.",
+-            "- Normal-scenario mean distance: within 0.10 m of "
+-            "the configured synthetic distance.",
+-            "- Inference latency is reported rather than hidden; "
+-            "P95 below 500 ms indicates capacity for the configured "
+-            "2 Hz input rate.",
+-            "",
+-            "## Automated test result",
+-            "",
+-            "```text",
+-            test_result_text.strip() or "Test output was not provided.",
+-            "```",
+-            "",
+-            "## Interpretation constraints",
+-            "",
+-            "- Results apply to the deterministic replay scenario.",
++            '## Acceptance criteria',
++            '',
++            '- Recording must have completed.',
++            '- Detection rate: at least 95%.',
++            '- Expected safety-state agreement: at least 95%.',
++            '- Normal-scenario mean distance: within 0.10 m of the configured synthetic distance.',
++            '- Inference latency is reported rather than hidden; '
++            'P95 below 500 ms indicates capacity for the configured '
++            '2 Hz input rate.',
++            '',
++            '## Automated test result',
++            '',
++            '```text',
++            test_result_text.strip() or 'Test output was not provided.',
++            '```',
++            '',
++            '## Interpretation constraints',
++            '',
++            '- Results apply to the deterministic replay scenario.',
+             (
+-                "- Distance statistics include only valid samples; compare the "
+-                "valid and invalid message counts before interpreting the mean."
++                '- Distance statistics include only valid samples; compare the '
++                'valid and invalid message counts before interpreting the mean.'
+             ),
+             (
+-                "- Backend labels come from recorded summaries; older recordings "
+-                "may contain incorrect labels and are not rewritten by this report."
++                '- Backend labels come from recorded summaries; older recordings '
++                'may contain incorrect labels and are not rewritten by this report.'
+             ),
+-            "- The depth map is synthetic and manually aligned with the image.",
+-            "- Detection success on one replay image does not establish "
+-            "general real-world accuracy.",
+-            "- Timing results apply to this ARM64 virtual machine.",
+-            "- This system estimates risk state but does not control a robot.",
+-            "",
++            '- The depth map is synthetic and manually aligned with the image.',
++            '- Detection success on one replay image does not establish '
++            'general real-world accuracy.',
++            '- Timing results apply to this ARM64 virtual machine.',
++            '- This system estimates risk state but does not control a robot.',
++            '',
+         ]
+     )
+ 
+-    return "\n".join(lines)
++    return '\n'.join(lines)
+ 
+ 
+ def main():
+     parser = argparse.ArgumentParser()
+     parser.add_argument(
+-        "--results-root",
++        '--results-root',
+         type=Path,
+-        default=Path("results/evaluation_suite"),
++        default=Path('results/evaluation_suite'),
+     )
+     parser.add_argument(
+-        "--test-result",
++        '--test-result',
+         type=Path,
+-        default=Path("results/colcon_test_result.txt"),
++        default=Path('results/colcon_test_result.txt'),
+     )
+     parser.add_argument(
+-        "--output",
++        '--output',
+         type=Path,
+-        default=Path("results/EVIDENCE_REPORT.md"),
++        default=Path('results/EVIDENCE_REPORT.md'),
+     )
+     arguments = parser.parse_args()
+ 
+     summaries = load_summaries(arguments.results_root)
+ 
+     if not summaries:
+-        raise SystemExit(
+-            f"No summary.json files found under {arguments.results_root}"
+-        )
++        raise SystemExit(f'No summary.json files found under {arguments.results_root}')
+ 
+-    test_result_text = ""
++    test_result_text = ''
+     if arguments.test_result.exists():
+-        test_result_text = arguments.test_result.read_text(
+-            encoding="utf-8"
+-        )
++        test_result_text = arguments.test_result.read_text(encoding='utf-8')
+ 
+     report = build_report(summaries, test_result_text)
+ 
+     arguments.output.parent.mkdir(parents=True, exist_ok=True)
+-    arguments.output.write_text(report, encoding="utf-8")
++    arguments.output.write_text(report, encoding='utf-8')
+ 
+-    print(f"Wrote {arguments.output}")
+-    print(f"Included {len(summaries)} evaluation scenarios")
++    print(f'Wrote {arguments.output}')
++    print(f'Included {len(summaries)} evaluation scenarios')
+ 
+ 
+-if __name__ == "__main__":
++if __name__ == '__main__':
+     main()
+diff --git a/src/warehouse_vision_safety/setup.py b/src/warehouse_vision_safety/setup.py
+index 7734c12..06c862a 100644
+--- a/src/warehouse_vision_safety/setup.py
++++ b/src/warehouse_vision_safety/setup.py
+@@ -1,9 +1,8 @@
+ from glob import glob
+-
+ import os
+ 
+-from setuptools import find_packages, setup
+-
++from setuptools import find_packages
++from setuptools import setup
+ 
+ package_name = 'warehouse_vision_safety'
+ 
+diff --git a/src/warehouse_vision_safety/test/test_evidence_report.py b/src/warehouse_vision_safety/test/test_evidence_report.py
+index d1d06d6..f416bf3 100644
+--- a/src/warehouse_vision_safety/test/test_evidence_report.py
++++ b/src/warehouse_vision_safety/test/test_evidence_report.py
+@@ -5,10 +5,8 @@ from pathlib import Path
+ 
+ import pytest
+ 
+-REPORT_PATH = (
+-    Path(__file__).resolve().parents[1] / "scripts" / "build_evidence_report.py"
+-)
+-spec = importlib.util.spec_from_file_location("build_evidence_report", REPORT_PATH)
++REPORT_PATH = Path(__file__).resolve().parents[1] / 'scripts' / 'build_evidence_report.py'
++spec = importlib.util.spec_from_file_location('build_evidence_report', REPORT_PATH)
+ report = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(report)
+ 
+@@ -16,59 +14,59 @@ spec.loader.exec_module(report)
+ @pytest.fixture
+ def summary():
+     return {
+-        "status": "completed",
+-        "scenario_name": "ai_replay_slow_2_5m",
+-        "expected_state": "SLOW",
+-        "detector": {
+-            "backend": "ONNX Runtime CPU",
+-            "detection_rate_percent": 100.0,
+-            "detection_messages": 60,
+-            "frames_with_person": 60,
++        'status': 'completed',
++        'scenario_name': 'ai_replay_slow_2_5m',
++        'expected_state': 'SLOW',
++        'detector': {
++            'backend': 'ONNX Runtime CPU',
++            'detection_rate_percent': 100.0,
++            'detection_messages': 60,
++            'frames_with_person': 60,
+         },
+-        "safety": {"state_agreement_percent": 100.0, "state_counts": {"SLOW": 60}},
+-        "depth": {
+-            "distance_m": {"mean": 2.5, "count": 60},
+-            "invalid_distance_messages": 0,
++        'safety': {'state_agreement_percent': 100.0, 'state_counts': {'SLOW': 60}},
++        'depth': {
++            'distance_m': {'mean': 2.5, 'count': 60},
++            'invalid_distance_messages': 0,
+         },
+-        "performance": {"inference_time_ms": {"mean": 47.2, "p95": 60.4}},
++        'performance': {'inference_time_ms': {'mean': 47.2, 'p95': 60.4}},
+     }
+ 
+ 
+ def test_failed_run_stays_review_and_exposes_sparse_depth(summary):
+-    summary["safety"] = {
+-        "state_agreement_percent": 2 / 142 * 100,
+-        "state_counts": {"SENSOR_FAULT": 140, "SLOW": 2},
++    summary['safety'] = {
++        'state_agreement_percent': 2 / 142 * 100,
++        'state_counts': {'SENSOR_FAULT': 140, 'SLOW': 2},
+     }
+-    summary["depth"]["distance_m"]["count"] = 2
+-    summary["depth"]["invalid_distance_messages"] = 142
+-    summary["detector"]["backend"] = "OpenCV DNN CPU"
+-    text = report.build_report([summary], "")
+-    assert report.scenario_assessment(summary) == "REVIEW"
+-    assert "Valid distance messages: 2" in text
+-    assert "Invalid distance messages: 142" in text
+-    assert "| Recorded inference backend | OpenCV DNN CPU |" in text
++    summary['depth']['distance_m']['count'] = 2
++    summary['depth']['invalid_distance_messages'] = 142
++    summary['detector']['backend'] = 'OpenCV DNN CPU'
++    text = report.build_report([summary], '')
++    assert report.scenario_assessment(summary) == 'REVIEW'
++    assert 'Valid distance messages: 2' in text
++    assert 'Invalid distance messages: 142' in text
++    assert '| Recorded inference backend | OpenCV DNN CPU |' in text
+ 
+ 
+ def test_successful_completed_trial_passes(summary):
+-    assert report.scenario_assessment(summary) == "PASS"
+-    assert "ONNX Runtime CPU" in report.build_report([summary], "")
++    assert report.scenario_assessment(summary) == 'PASS'
++    assert 'ONNX Runtime CPU' in report.build_report([summary], '')
+ 
+ 
+-@pytest.mark.parametrize("distance", [None, 4.0])
++@pytest.mark.parametrize('distance', [None, 4.0])
+ def test_named_slow_trial_checks_depth(summary, distance):
+-    summary["depth"]["distance_m"]["mean"] = distance
+-    assert report.scenario_assessment(summary) == "REVIEW"
++    summary['depth']['distance_m']['mean'] = distance
++    assert report.scenario_assessment(summary) == 'REVIEW'
+ 
+ 
+ def test_interrupted_trial_cannot_pass(summary):
+-    summary["status"] = "interrupted"
+-    assert report.scenario_assessment(summary) == "REVIEW"
++    summary['status'] = 'interrupted'
++    assert report.scenario_assessment(summary) == 'REVIEW'
+ 
+ 
+ def test_mixed_recordings_retain_backend_labels(summary):
+     from copy import deepcopy
+ 
+     old = deepcopy(summary)
+-    old["detector"]["backend"] = "OpenCV DNN CPU"
+-    text = report.build_report([old, summary], "")
+-    assert "| Recorded inference backend | ONNX Runtime CPU, OpenCV DNN CPU |" in text
++    old['detector']['backend'] = 'OpenCV DNN CPU'
++    text = report.build_report([old, summary], '')
++    assert '| Recorded inference backend | ONNX Runtime CPU, OpenCV DNN CPU |' in text
+diff --git a/src/warehouse_vision_safety/test/test_flake8.py b/src/warehouse_vision_safety/test/test_flake8.py
+index 27ee107..3229bab 100644
+--- a/src/warehouse_vision_safety/test/test_flake8.py
++++ b/src/warehouse_vision_safety/test/test_flake8.py
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++from pathlib import Path
++
+ from ament_flake8.main import main_with_errors
+ import pytest
+ 
+@@ -19,7 +21,9 @@ import pytest
+ @pytest.mark.flake8
+ @pytest.mark.linter
+ def test_flake8():
+-    rc, errors = main_with_errors(argv=[])
+-    assert rc == 0, \
+-        'Found %d code style errors / warnings:\n' % len(errors) + \
+-        '\n'.join(errors)
++    package_root = Path(__file__).resolve().parents[1]
++    paths = ['warehouse_vision_safety', 'launch', 'scripts', 'test', 'setup.py']
++    rc, errors = main_with_errors(
++        argv=[str(package_root / path) for path in paths],
++    )
++    assert rc == 0, 'Found %d code style errors / warnings:\n' % len(errors) + '\n'.join(errors)
+diff --git a/src/warehouse_vision_safety/test/test_pep257.py b/src/warehouse_vision_safety/test/test_pep257.py
+index b234a38..5254049 100644
+--- a/src/warehouse_vision_safety/test/test_pep257.py
++++ b/src/warehouse_vision_safety/test/test_pep257.py
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++from pathlib import Path
++
+ from ament_pep257.main import main
+ import pytest
+ 
+@@ -19,5 +21,7 @@ import pytest
+ @pytest.mark.linter
+ @pytest.mark.pep257
+ def test_pep257():
+-    rc = main(argv=['.', 'test'])
++    package_root = Path(__file__).resolve().parents[1]
++    paths = ['warehouse_vision_safety', 'launch', 'scripts', 'test', 'setup.py']
++    rc = main(argv=[str(package_root / path) for path in paths])
+     assert rc == 0, 'Found code style errors / warnings'
+diff --git a/src/warehouse_vision_safety/test/test_risk_monitor.py b/src/warehouse_vision_safety/test/test_risk_monitor.py
+index b8ec4bc..392ee52 100644
+--- a/src/warehouse_vision_safety/test/test_risk_monitor.py
++++ b/src/warehouse_vision_safety/test/test_risk_monitor.py
+@@ -7,14 +7,16 @@ from unittest.mock import Mock
+ import numpy as np
+ import pytest
+ 
+-rclpy = pytest.importorskip("rclpy")
+-pytest.importorskip("cv_bridge")
++rclpy = pytest.importorskip('rclpy')
++pytest.importorskip('cv_bridge')
+ 
+-from rclpy.duration import Duration  # noqa: E402 (ROS availability checked above)
+-from rclpy.qos import ReliabilityPolicy  # noqa: E402 (ROS availability checked above)
+-from vision_msgs.msg import Detection2D, Detection2DArray  # noqa: E402 (ROS availability checked above)
+-from warehouse_vision_safety.risk_monitor import RiskMonitor  # noqa: E402 (ROS availability checked above)
+-from warehouse_vision_safety.scenario_publisher import ScenarioPublisher  # noqa: E402 (ROS availability checked above)
++# Import ROS types only after checking runtime availability.
++from rclpy.duration import Duration  # noqa: E402
++from rclpy.qos import ReliabilityPolicy  # noqa: E402
++from vision_msgs.msg import Detection2D  # noqa: E402
++from vision_msgs.msg import Detection2DArray  # noqa: E402
++from warehouse_vision_safety.risk_monitor import RiskMonitor  # noqa: E402
++from warehouse_vision_safety.scenario_publisher import ScenarioPublisher  # noqa: E402
+ 
+ 
+ @pytest.fixture
+@@ -32,7 +34,7 @@ def monitor():
+ 
+ def feed_frame(monitor, distance, has_person=True):
+     depth = np.full((10, 10), distance, dtype=np.float32)
+-    message = monitor.bridge.cv2_to_imgmsg(depth, encoding="32FC1")
++    message = monitor.bridge.cv2_to_imgmsg(depth, encoding='32FC1')
+     message.header.stamp = monitor.get_clock().now().to_msg()
+     detections = Detection2DArray()
+     detections.header = message.header
+@@ -46,62 +48,48 @@ def feed_frame(monitor, distance, has_person=True):
+     monitor.synchronized_callback(message, detections)
+ 
+ 
+-@pytest.mark.parametrize(
+-    "distance,state", [(0.8, "STOP"), (2.5, "SLOW"), (4.0, "CLEAR")]
+-)
++@pytest.mark.parametrize('distance,state', [(0.8, 'STOP'), (2.5, 'SLOW'), (4.0, 'CLEAR')])
+ def test_valid_frame_publishes_one_finite_distance(monitor, distance, state):
+     feed_frame(monitor, distance)
+     monitor.state_publisher.publish.assert_called_once()
+     monitor.distance_publisher.publish.assert_called_once()
+     assert monitor.state_publisher.publish.call_args.args[0].data == state
+-    assert monitor.distance_publisher.publish.call_args.args[0].data == pytest.approx(
+-        distance
+-    )
++    assert monitor.distance_publisher.publish.call_args.args[0].data == pytest.approx(distance)
+ 
+ 
+ def test_invalid_depth_publishes_fault_and_recovers(monitor):
+     feed_frame(monitor, np.nan)
+-    assert monitor.state_publisher.publish.call_args.args[0].data == "SENSOR_FAULT"
++    assert monitor.state_publisher.publish.call_args.args[0].data == 'SENSOR_FAULT'
+     assert math.isnan(monitor.distance_publisher.publish.call_args.args[0].data)
+     feed_frame(monitor, 2.5)
+-    assert monitor.state_publisher.publish.call_args.args[0].data == "SLOW"
+-    assert monitor.distance_publisher.publish.call_args.args[0].data == pytest.approx(
+-        2.5
+-    )
++    assert monitor.state_publisher.publish.call_args.args[0].data == 'SLOW'
++    assert monitor.distance_publisher.publish.call_args.args[0].data == pytest.approx(2.5)
+     assert monitor.distance_publisher.publish.call_count == 2
+ 
+ 
+ def test_no_person_publishes_clear_without_a_distance(monitor):
+     feed_frame(monitor, 2.5, has_person=False)
+-    assert monitor.state_publisher.publish.call_args.args[0].data == "CLEAR"
++    assert monitor.state_publisher.publish.call_args.args[0].data == 'CLEAR'
+     assert math.isnan(monitor.distance_publisher.publish.call_args.args[0].data)
+ 
+ 
+ def test_missing_synchronized_input_remains_a_fault(monitor):
+     monitor.last_synchronized_input = monitor.get_clock().now() - Duration(seconds=2)
+     monitor.check_staleness()
+-    assert monitor.state_publisher.publish.call_args.args[0].data == "SENSOR_FAULT"
++    assert monitor.state_publisher.publish.call_args.args[0].data == 'SENSOR_FAULT'
+     assert math.isnan(monitor.distance_publisher.publish.call_args.args[0].data)
+ 
+ 
+ def test_depth_conversion_failure_is_a_fault(monitor):
+-    monitor.bridge = SimpleNamespace(
+-        imgmsg_to_cv2=Mock(side_effect=ValueError("bad depth"))
+-    )
++    monitor.bridge = SimpleNamespace(imgmsg_to_cv2=Mock(side_effect=ValueError('bad depth')))
+     monitor.synchronized_callback(None, Detection2DArray())
+-    assert monitor.state_publisher.publish.call_args.args[0].data == "SENSOR_FAULT"
++    assert monitor.state_publisher.publish.call_args.args[0].data == 'SENSOR_FAULT'
+ 
+ 
+ def test_simulated_depth_endpoints_request_reliable_delivery(monitor):
+     publisher = ScenarioPublisher()
+     try:
+-        assert (
+-            monitor.depth_subscriber.sub.qos_profile.reliability
+-            == ReliabilityPolicy.RELIABLE
+-        )
+-        assert (
+-            publisher.depth_publisher.qos_profile.reliability
+-            == ReliabilityPolicy.RELIABLE
+-        )
++        assert monitor.depth_subscriber.sub.qos_profile.reliability == ReliabilityPolicy.RELIABLE
++        assert publisher.depth_publisher.qos_profile.reliability == ReliabilityPolicy.RELIABLE
+     finally:
+         publisher.destroy_node()
+diff --git a/src/warehouse_vision_safety/test/test_safety_logic.py b/src/warehouse_vision_safety/test/test_safety_logic.py
+index f6f762e..dad4b02 100644
+--- a/src/warehouse_vision_safety/test/test_safety_logic.py
++++ b/src/warehouse_vision_safety/test/test_safety_logic.py
+@@ -1,28 +1,26 @@
+ import numpy as np
+ import pytest
+-from warehouse_vision_safety.safety_logic import (
+-    DepthValidationError,
+-    classify_distance,
+-    median_depth_in_bbox,
+-)
++from warehouse_vision_safety.safety_logic import classify_distance
++from warehouse_vision_safety.safety_logic import DepthValidationError
++from warehouse_vision_safety.safety_logic import median_depth_in_bbox
+ 
+ 
+ @pytest.mark.parametrize(
+-    ("distance", "expected_state"),
+-    [(0.8, "STOP"), (1.0, "STOP"), (2.5, "SLOW"), (3.0, "SLOW"), (4.0, "CLEAR")],
++    ('distance', 'expected_state'),
++    [(0.8, 'STOP'), (1.0, 'STOP'), (2.5, 'SLOW'), (3.0, 'SLOW'), (4.0, 'CLEAR')],
+ )
+ def test_classify_distance(distance, expected_state):
+     assert classify_distance(distance, 1.0, 3.0) == expected_state
+ 
+ 
+-@pytest.mark.parametrize("invalid_distance", [0.0, -1.0, np.nan, np.inf])
++@pytest.mark.parametrize('invalid_distance', [0.0, -1.0, np.nan, np.inf])
+ def test_classify_distance_rejects_invalid_distances(invalid_distance):
+     with pytest.raises(DepthValidationError):
+         classify_distance(invalid_distance, 1.0, 3.0)
+ 
+ 
+ @pytest.mark.parametrize(
+-    ("stop_distance", "slow_distance"),
++    ('stop_distance', 'slow_distance'),
+     [(0.0, 3.0), (-1.0, 3.0), (1.0, 1.0), (3.0, 1.0)],
+ )
+ def test_classify_distance_rejects_invalid_thresholds(stop_distance, slow_distance):
+@@ -95,9 +93,7 @@ def test_median_depth_rejects_bbox_outside_image():
+     depth = np.full((4, 4), 2.0, dtype=np.float32)
+ 
+     with pytest.raises(DepthValidationError):
+-        median_depth_in_bbox(
+-            depth, center_x=20.0, center_y=20.0, size_x=2.0, size_y=2.0
+-        )
++        median_depth_in_bbox(depth, center_x=20.0, center_y=20.0, size_x=2.0, size_y=2.0)
+ 
+ 
+ def test_median_depth_rejects_non_2d_image():
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/ai_person_detector.py b/src/warehouse_vision_safety/warehouse_vision_safety/ai_person_detector.py
+index 74599d5..3f1e20e 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/ai_person_detector.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/ai_person_detector.py
+@@ -1,25 +1,23 @@
+ from pathlib import Path
+ from time import perf_counter
+ 
++from ament_index_python.packages import get_package_share_directory
+ import cv2
++from cv_bridge import CvBridge
+ import numpy as np
++import onnxruntime as ort
+ import rclpy
+-from ament_index_python.packages import get_package_share_directory
+-from cv_bridge import CvBridge
+ from rclpy.node import Node
+-from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
++from rclpy.qos import QoSProfile
++from rclpy.qos import ReliabilityPolicy
+ from sensor_msgs.msg import Image
+ from std_msgs.msg import Float32
+-from vision_msgs.msg import (
+-    Detection2D,
+-    Detection2DArray,
+-    ObjectHypothesisWithPose
+-)
+-import onnxruntime as ort
++from vision_msgs.msg import Detection2D
++from vision_msgs.msg import Detection2DArray
++from vision_msgs.msg import ObjectHypothesisWithPose
+ 
+ 
+ class AIPersonDetector(Node):
+-
+     def __init__(self):
+         super().__init__('ai_person_detector')
+ 
+@@ -36,10 +34,14 @@ class AIPersonDetector(Node):
+         self.declare_parameter('publish_debug_image', True)
+ 
+         self.model_path = self.get_parameter('model_path').get_parameter_value().string_value
+-        self.confidence_threshold = self.get_parameter('confidence_threshold').get_parameter_value().double_value
++        self.confidence_threshold = (
++            self.get_parameter('confidence_threshold').get_parameter_value().double_value
++        )
+         self.nms_threshold = self.get_parameter('nms_threshold').get_parameter_value().double_value
+         self.input_size = self.get_parameter('input_size').get_parameter_value().integer_value
+-        self.publish_debug_image = self.get_parameter('publish_debug_image').get_parameter_value().bool_value
++        self.publish_debug_image = (
++            self.get_parameter('publish_debug_image').get_parameter_value().bool_value
++        )
+ 
+         if not Path(self.model_path).is_file():
+             raise FileNotFoundError(f'YOLO model was not found at: {self.model_path}')
+@@ -56,28 +58,20 @@ class AIPersonDetector(Node):
+         self.bridge = CvBridge()
+ 
+         self.session = ort.InferenceSession(
+-        self.model_path,
++            self.model_path,
+             providers=['CPUExecutionProvider'],
+         )
+         self.input_name = self.session.get_inputs()[0].name
+ 
+         self.detection_publisher = self.create_publisher(
+-            Detection2DArray,
+-            '/perception/person_detections',
+-            10
++            Detection2DArray, '/perception/person_detections', 10
+         )
+ 
+         self.inference_time_publisher = self.create_publisher(
+-            Float32,
+-            '/perception/inference_time_ms',
+-            10
++            Float32, '/perception/inference_time_ms', 10
+         )
+ 
+-        self.debug_image_publisher = self.create_publisher(
+-            Image,
+-            '/perception/debug_image',
+-            10
+-        )
++        self.debug_image_publisher = self.create_publisher(Image, '/perception/debug_image', 10)
+ 
+         self.image_subscription = self.create_subscription(
+             Image,
+@@ -99,33 +93,23 @@ class AIPersonDetector(Node):
+     def letterbox(self, image):
+         image_height, image_width = image.shape[:2]
+ 
+-        scale = min(
+-            self.input_size / image_width,
+-            self.input_size / image_height
+-        )
++        scale = min(self.input_size / image_width, self.input_size / image_height)
+ 
+         resized_width = int(round(image_width * scale))
+         resized_height = int(round(image_height * scale))
+ 
+         resized = cv2.resize(
+-            image,
+-            (resized_width, resized_height),
+-            interpolation=cv2.INTER_LINEAR
++            image, (resized_width, resized_height), interpolation=cv2.INTER_LINEAR
+         )
+ 
+-        padded = np.full(
+-            (self.input_size, self.input_size, 3),
+-            114,
+-            dtype=np.uint8
+-        )
++        padded = np.full((self.input_size, self.input_size, 3), 114, dtype=np.uint8)
+ 
+         pad_x = (self.input_size - resized_width) // 2
+         pad_y = (self.input_size - resized_height) // 2
+ 
+-        padded[
+-            pad_y : pad_y + resized_height,
+-            pad_x : pad_x + resized_width,
+-        ] = resized
++        image_rows = slice(pad_y, pad_y + resized_height)
++        image_columns = slice(pad_x, pad_x + resized_width)
++        padded[image_rows, image_columns] = resized
+ 
+         return padded, scale, pad_x, pad_y
+ 
+@@ -191,7 +175,7 @@ class AIPersonDetector(Node):
+                     int(round(x_min)),
+                     int(round(y_min)),
+                     int(round(clipped_width)),
+-                    int(round(clipped_height))
++                    int(round(clipped_height)),
+                 ]
+             )
+             scores.append(person_score)
+@@ -200,10 +184,7 @@ class AIPersonDetector(Node):
+             return []
+ 
+         selected_indices = cv2.dnn.NMSBoxes(
+-            boxes,
+-            scores,
+-            self.confidence_threshold,
+-            self.nms_threshold
++            boxes, scores, self.confidence_threshold, self.nms_threshold
+         )
+ 
+         if len(selected_indices) == 0:
+@@ -265,31 +246,22 @@ class AIPersonDetector(Node):
+                 cv2.FONT_HERSHEY_SIMPLEX,
+                 0.6,
+                 (0, 255, 0),
+-                2
++                2,
+             )
+ 
+-        debug_message = self.bridge.cv2_to_imgmsg(
+-            annotated,
+-            encoding='bgr8'
+-        )
++        debug_message = self.bridge.cv2_to_imgmsg(annotated, encoding='bgr8')
+         debug_message.header = source_message.header
+         self.debug_image_publisher.publish(debug_message)
+ 
+     def image_callback(self, message):
+         try:
+-            image = self.bridge.imgmsg_to_cv2(
+-                message,
+-                desired_encoding='bgr8'
+-            )
++            image = self.bridge.imgmsg_to_cv2(message, desired_encoding='bgr8')
+ 
+             start_time = perf_counter()
+             detections = self.run_inference(image)
+             inference_time_ms = (perf_counter() - start_time) * 1000.0
+ 
+-            detection_message = self.create_detection_message(
+-                message,
+-                detections
+-            )
++            detection_message = self.create_detection_message(message, detections)
+             self.detection_publisher.publish(detection_message)
+ 
+             timing_message = Float32()
+@@ -301,10 +273,8 @@ class AIPersonDetector(Node):
+         except Exception as error:
+             # Do not publish an empty detection message on processing failure.
+             # The risk monitor's stale-input timer can then report SENSOR_FAULT.
+-            self.get_logger().error(
+-                f'Person detection failed: {error}',
+-                throttle_duration_sec=2.0
+-            )
++            self.get_logger().error(f'Person detection failed: {error}', throttle_duration_sec=2.0)
++
+ 
+ def main(args=None):
+     rclpy.init(args=args)
+@@ -322,4 +292,4 @@ def main(args=None):
+ 
+ 
+ if __name__ == '__main__':
+-    main()
+\ No newline at end of file
++    main()
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/evaluation_recorder.py b/src/warehouse_vision_safety/warehouse_vision_safety/evaluation_recorder.py
+index 0542507..7baf0d6 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/evaluation_recorder.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/evaluation_recorder.py
+@@ -1,7 +1,8 @@
++from collections import Counter
+ import csv
++from datetime import datetime
++from datetime import timezone
+ import json
+-from collections import Counter
+-from datetime import datetime, timezone
+ from pathlib import Path
+ from time import perf_counter
+ 
+@@ -9,7 +10,8 @@ import numpy as np
+ import rclpy
+ from rclpy.executors import ExternalShutdownException
+ from rclpy.node import Node
+-from std_msgs.msg import Float32, String
++from std_msgs.msg import Float32
++from std_msgs.msg import String
+ from vision_msgs.msg import Detection2DArray
+ 
+ 
+@@ -39,7 +41,7 @@ def numeric_summary(values):
+ 
+ 
+ class EvaluationRecorder(Node):
+-    '''Record quantitative measurements from an AI perception trial.'''
++    """Record quantitative measurements from an AI perception trial."""
+ 
+     def __init__(self):
+         super().__init__('evaluation_recorder')
+@@ -52,28 +54,22 @@ class EvaluationRecorder(Node):
+             'results/ai_replay_evaluation',
+         )
+ 
+-        self.duration_s = self.get_parameter(
+-            'duration_s'
+-        ).get_parameter_value().double_value
++        self.duration_s = self.get_parameter('duration_s').get_parameter_value().double_value
+ 
+-        self.scenario_name = self.get_parameter(
+-            'scenario_name'
+-        ).get_parameter_value().string_value
++        self.scenario_name = self.get_parameter('scenario_name').get_parameter_value().string_value
+ 
+-        self.expected_state = self.get_parameter(
+-            'expected_state'
+-        ).get_parameter_value().string_value
++        self.expected_state = (
++            self.get_parameter('expected_state').get_parameter_value().string_value
++        )
+ 
+-        output_directory = self.get_parameter(
+-            'output_directory'
+-        ).get_parameter_value().string_value
++        output_directory = (
++            self.get_parameter('output_directory').get_parameter_value().string_value
++        )
+ 
+         if self.duration_s <= 0.0:
+             raise ValueError('duration_s must be greater than zero')
+ 
+-        self.output_directory = Path(
+-            output_directory
+-        ).expanduser().resolve()
++        self.output_directory = Path(output_directory).expanduser().resolve()
+ 
+         self.start_time = perf_counter()
+         self.started_at = datetime.now(timezone.utc).isoformat()
+@@ -120,8 +116,7 @@ class EvaluationRecorder(Node):
+         self.timer = self.create_timer(0.25, self.check_duration)
+ 
+         self.get_logger().info(
+-            f'Recording scenario \'{self.scenario_name}\' for '
+-            f'{self.duration_s:.1f} seconds'
++            f"Recording scenario '{self.scenario_name}' for {self.duration_s:.1f} seconds"
+         )
+ 
+     def detection_callback(self, message):
+@@ -135,9 +130,7 @@ class EvaluationRecorder(Node):
+         for detection in message.detections:
+             for result in detection.results:
+                 if result.hypothesis.class_id == 'person':
+-                    self.confidence_samples.append(
+-                        float(result.hypothesis.score)
+-                    )
++                    self.confidence_samples.append(float(result.hypothesis.score))
+ 
+     def inference_callback(self, message):
+         value = float(message.data)
+@@ -172,11 +165,7 @@ class EvaluationRecorder(Node):
+ 
+         detection_rate = 0.0
+         if self.detection_message_count:
+-            detection_rate = (
+-                self.frames_with_person
+-                / self.detection_message_count
+-                * 100.0
+-            )
++            detection_rate = self.frames_with_person / self.detection_message_count * 100.0
+ 
+         total_state_samples = sum(self.state_counts.values())
+         expected_state_samples = self.state_counts.get(
+@@ -186,15 +175,9 @@ class EvaluationRecorder(Node):
+ 
+         state_agreement = 0.0
+         if total_state_samples:
+-            state_agreement = (
+-                expected_state_samples
+-                / total_state_samples
+-                * 100.0
+-            )
+-
+-        inference_summary = numeric_summary(
+-            self.inference_samples_ms
+-        )
++            state_agreement = expected_state_samples / total_state_samples * 100.0
++
++        inference_summary = numeric_summary(self.inference_samples_ms)
+ 
+         mean_inference_ms = inference_summary['mean']
+         estimated_max_fps = None
+@@ -214,24 +197,16 @@ class EvaluationRecorder(Node):
+                 'detection_messages': self.detection_message_count,
+                 'frames_with_person': self.frames_with_person,
+                 'detection_rate_percent': detection_rate,
+-                'total_person_detections': (
+-                    self.total_person_detections
+-                ),
+-                'confidence': numeric_summary(
+-                    self.confidence_samples
+-                ),
++                'total_person_detections': (self.total_person_detections),
++                'confidence': numeric_summary(self.confidence_samples),
+             },
+             'performance': {
+                 'inference_time_ms': inference_summary,
+                 'estimated_max_fps': estimated_max_fps,
+             },
+             'depth': {
+-                'distance_m': numeric_summary(
+-                    self.distance_samples_m
+-                ),
+-                'invalid_distance_messages': (
+-                    self.invalid_distance_count
+-                ),
++                'distance_m': numeric_summary(self.distance_samples_m),
++                'invalid_distance_messages': (self.invalid_distance_count),
+             },
+             'safety': {
+                 'state_counts': dict(self.state_counts),
+@@ -243,9 +218,7 @@ class EvaluationRecorder(Node):
+         with summary_path.open('w', encoding='utf-8') as output_file:
+             json.dump(summary, output_file, indent=2)
+ 
+-        latency_path = (
+-            self.output_directory / 'inference_latency.csv'
+-        )
++        latency_path = self.output_directory / 'inference_latency.csv'
+         with latency_path.open(
+             'w',
+             encoding='utf-8',
+@@ -262,9 +235,7 @@ class EvaluationRecorder(Node):
+ 
+         self.results_written = True
+ 
+-        self.get_logger().info(
+-            f'Evaluation complete: {summary_path}'
+-        )
++        self.get_logger().info(f'Evaluation complete: {summary_path}')
+ 
+ 
+ def main(args=None):
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/mock_person_detector.py b/src/warehouse_vision_safety/warehouse_vision_safety/mock_person_detector.py
+index b1f4e42..fade847 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/mock_person_detector.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/mock_person_detector.py
+@@ -1,13 +1,12 @@
+ import rclpy
+-
+ from rclpy.node import Node
+ from rclpy.qos import qos_profile_sensor_data
+ from sensor_msgs.msg import Image
+-from vision_msgs.msg import Detection2D, Detection2DArray
++from vision_msgs.msg import Detection2D
++from vision_msgs.msg import Detection2DArray
+ 
+ 
+ class MockPersonDetector(Node):
+-
+     def __init__(self):
+         super().__init__('mock_person_detector')
+ 
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/rgbd_replay_publisher.py b/src/warehouse_vision_safety/warehouse_vision_safety/rgbd_replay_publisher.py
+index 2ebf5a2..23fcd1a 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/rgbd_replay_publisher.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/rgbd_replay_publisher.py
+@@ -1,31 +1,30 @@
+ from pathlib import Path
+ 
++from ament_index_python.packages import get_package_share_directory
+ import cv2
++from cv_bridge import CvBridge
+ import numpy as np
+ import rclpy
+-from ament_index_python.packages import get_package_share_directory
+-from cv_bridge import CvBridge
+ from rclpy.node import Node
+-from sensor_msgs.msg import CameraInfo, Image
++from sensor_msgs.msg import CameraInfo
++from sensor_msgs.msg import Image
+ 
+ 
+ class RGBDReplayPublisher(Node):
+     # Approximate person regions for the supplied bus.jpg image.
+     # Coordinate are normalized: x_min, y_min, x_max, y_max
+     PERSON_REGIONS = (
+-        (0.00, 0.50, 0.11, 0.87), # Partially visible left person
+-        (0.03, 0.35, 0.31, 0.86), # Main left person
+-        (0.24, 0.35, 0.46, 0.82), # Centre person
+-        (0.80, 0.34, 1.00, 0.88), # Right person
++        (0.00, 0.50, 0.11, 0.87),  # Partially visible left person
++        (0.03, 0.35, 0.31, 0.86),  # Main left person
++        (0.24, 0.35, 0.46, 0.82),  # Centre person
++        (0.80, 0.34, 1.00, 0.88),  # Right person
+     )
+ 
+     def __init__(self):
+         super().__init__('rgbd_replay_publisher')
+ 
+         default_image_path = (
+-            Path(get_package_share_directory('warehouse_vision_safety'))
+-            / 'test_data'
+-            / 'bus.jpg'
++            Path(get_package_share_directory('warehouse_vision_safety')) / 'test_data' / 'bus.jpg'
+         )
+ 
+         self.declare_parameter('image_path', str(default_image_path))
+@@ -66,14 +65,10 @@ class RGBDReplayPublisher(Node):
+             10,
+         )
+ 
+-        self.timer = self.create_timer(
+-            1.0 / rate_hz,
+-            self.publish_frame
+-        )
++        self.timer = self.create_timer(1.0 / rate_hz, self.publish_frame)
+ 
+         self.get_logger().info(
+-            f'RGB-D replay ready: {image_path}, '
+-            f'{self.width}x{self.height}, {rate_hz:.1f} Hz'
++            f'RGB-D replay ready: {image_path}, {self.width}x{self.height}, {rate_hz:.1f} Hz'
+         )
+ 
+     def apply_person_regions(self, depth_image, value):
+@@ -98,15 +93,30 @@ class RGBDReplayPublisher(Node):
+         center_y = self.height / 2.0
+ 
+         camera_info.k = [
+-            focal_length, 0.0, center_x,
+-            0.0, focal_length, center_y,
+-            0.0, 0.0, 1.0,
++            focal_length,
++            0.0,
++            center_x,
++            0.0,
++            focal_length,
++            center_y,
++            0.0,
++            0.0,
++            1.0,
+         ]
+ 
+         camera_info.p = [
+-            focal_length, 0.0, center_x, 0.0,
+-            0.0, focal_length, center_y, 0.0,
+-            0.0, 0.0, 1.0, 0.0,
++            focal_length,
++            0.0,
++            center_x,
++            0.0,
++            0.0,
++            focal_length,
++            center_y,
++            0.0,
++            0.0,
++            0.0,
++            1.0,
++            0.0,
+         ]
+ 
+         return camera_info
+@@ -114,9 +124,15 @@ class RGBDReplayPublisher(Node):
+     def publish_frame(self):
+         self.frame_count += 1
+ 
+-        person_distance = self.get_parameter('person_distance_m').get_parameter_value().double_value
+-        background_distance = self.get_parameter('background_distance_m').get_parameter_value().double_value
+-        invalid_every_n = self.get_parameter('invalid_depth_every_n').get_parameter_value().integer_value
++        person_distance = (
++            self.get_parameter('person_distance_m').get_parameter_value().double_value
++        )
++        background_distance = (
++            self.get_parameter('background_distance_m').get_parameter_value().double_value
++        )
++        invalid_every_n = (
++            self.get_parameter('invalid_depth_every_n').get_parameter_value().integer_value
++        )
+         drop_every_n = self.get_parameter('drop_depth_every_n').get_parameter_value().integer_value
+ 
+         if person_distance <= 0.0 or background_distance <= 0.0:
+@@ -142,21 +158,13 @@ class RGBDReplayPublisher(Node):
+         )
+         self.apply_person_regions(depth_image, person_distance)
+ 
+-        if (
+-            invalid_every_n > 0
+-            and self.frame_count % invalid_every_n == 0
+-        ):
++        if invalid_every_n > 0 and self.frame_count % invalid_every_n == 0:
+             depth_image.fill(np.nan)
+ 
+-        should_drop_depth = (
+-            drop_every_n > 0
+-            and self.frame_count % drop_every_n == 0
+-        )
++        should_drop_depth = drop_every_n > 0 and self.frame_count % drop_every_n == 0
+ 
+         self.rgb_publisher.publish(rgb_message)
+-        self.camera_info_publisher.publish(
+-            self.create_camera_info(stamp)
+-        )
++        self.camera_info_publisher.publish(self.create_camera_info(stamp))
+ 
+         if not should_drop_depth:
+             depth_message = self.bridge.cv2_to_imgmsg(
+@@ -182,4 +190,4 @@ def main(args=None):
+ 
+ 
+ if __name__ == '__main__':
+-    main()
+\ No newline at end of file
++    main()
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/risk_monitor.py b/src/warehouse_vision_safety/warehouse_vision_safety/risk_monitor.py
+index bd653d4..1f1dfcb 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/risk_monitor.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/risk_monitor.py
+@@ -1,25 +1,22 @@
+ import math
+ 
+ from cv_bridge import CvBridge
+-
+ import message_filters
+ import rclpy
+-
+ from rclpy.node import Node
+-from rclpy.qos import QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
++from rclpy.qos import qos_profile_sensor_data
++from rclpy.qos import QoSProfile
++from rclpy.qos import ReliabilityPolicy
+ from sensor_msgs.msg import Image
+-from std_msgs.msg import Float32, String
++from std_msgs.msg import Float32
++from std_msgs.msg import String
+ from vision_msgs.msg import Detection2DArray
+-
+-from warehouse_vision_safety.safety_logic import (
+-    classify_distance,
+-    DepthValidationError,
+-    median_depth_in_bbox
+-)
++from warehouse_vision_safety.safety_logic import classify_distance
++from warehouse_vision_safety.safety_logic import DepthValidationError
++from warehouse_vision_safety.safety_logic import median_depth_in_bbox
+ 
+ 
+ class RiskMonitor(Node):
+-
+     def __init__(self):
+         super().__init__('risk_monitor')
+ 
+@@ -57,7 +54,7 @@ class RiskMonitor(Node):
+             self,
+             Detection2DArray,
+             '/perception/person_detections',
+-            qos_profile=qos_profile_sensor_data
++            qos_profile=qos_profile_sensor_data,
+         )
+ 
+         self.synchronizer = message_filters.ApproximateTimeSynchronizer(
+@@ -83,9 +80,7 @@ class RiskMonitor(Node):
+         if state != self.last_state:
+             detail = f', reason{reason}' if reason else ''
+             distance_text = f'{distance:.2f} m' if math.isfinite(distance) else 'unavailable'
+-            self.get_logger().info(
+-                f'State changed to {state}, distance={distance_text}{detail}'
+-            )
++            self.get_logger().info(f'State changed to {state}, distance={distance_text}{detail}')
+             self.last_state = state
+ 
+     def synchronized_callback(
+@@ -96,10 +91,7 @@ class RiskMonitor(Node):
+         self.last_synchronized_input = self.get_clock().now()
+ 
+         try:
+-            depth_image = self.bridge.imgmsg_to_cv2(
+-                depth_message,
+-                desired_encoding='32FC1'
+-            )
++            depth_image = self.bridge.imgmsg_to_cv2(depth_message, desired_encoding='32FC1')
+         except Exception as error:
+             self.get_logger().error(f'Depth conversion failed: {error}')
+             self.publish_result('SENSOR_FAULT', reason='depth conversion failed')
+@@ -118,7 +110,7 @@ class RiskMonitor(Node):
+                     center_y=detection.bbox.center.position.y,
+                     size_x=detection.bbox.size_x,
+                     size_y=detection.bbox.size_y,
+-                    minimum_valid_pixels=self.get_parameter('minimum_valid_pixels').value
++                    minimum_valid_pixels=self.get_parameter('minimum_valid_pixels').value,
+                 )
+             except DepthValidationError as error:
+                 self.get_logger().warning(f'Cannot estimate person distance: {error}')
+@@ -137,7 +129,7 @@ class RiskMonitor(Node):
+             state = classify_distance(
+                 distance_m=nearest_distance,
+                 stop_distance_m=self.get_parameter('stop_distance_m').value,
+-                slow_distance_m=self.get_parameter('slow_distance_m').value
++                slow_distance_m=self.get_parameter('slow_distance_m').value,
+             )
+         except DepthValidationError as error:
+             self.get_logger().error(f'Invalid safety configuration: {error}')
+@@ -148,8 +140,9 @@ class RiskMonitor(Node):
+ 
+     def check_staleness(self):
+         timeout = float(self.get_parameter('stale_timeout_s').value)
+-        elapsed = (self.get_clock().now() -
+-                   self.last_synchronized_input).nanoseconds / 1_000_000_000.0
++        elapsed = (
++            self.get_clock().now() - self.last_synchronized_input
++        ).nanoseconds / 1_000_000_000.0
+ 
+         if elapsed > timeout:
+             self.publish_result('SENSOR_FAULT', reason='synchronized input is stale')
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/safety_logic.py b/src/warehouse_vision_safety/warehouse_vision_safety/safety_logic.py
+index eca71cd..bdb1745 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/safety_logic.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/safety_logic.py
+@@ -16,9 +16,7 @@ def classify_distance(
+         raise DepthValidationError('stop_distance_m must be greater than zero')
+ 
+     if slow_distance_m <= stop_distance_m:
+-        raise DepthValidationError(
+-            'slow_distance_m must be greater than stop_distance_m'
+-        )
++        raise DepthValidationError('slow_distance_m must be greater than stop_distance_m')
+ 
+     if not math.isfinite(distance_m) or distance_m <= 0.0:
+         raise DepthValidationError('distance must be finite and greater than zero')
+@@ -65,9 +63,7 @@ def median_depth_in_bbox(
+         raise DepthValidationError('bounding box does not overlap the depth image')
+ 
+     depth_region = depth_image[y_min:y_max, x_min:x_max]
+-    valid_depths = depth_region[
+-        np.isfinite(depth_region) & (depth_region > 0.0)
+-    ]
++    valid_depths = depth_region[np.isfinite(depth_region) & (depth_region > 0.0)]
+ 
+     if valid_depths.size < minimum_valid_pixels:
+         raise DepthValidationError(
+diff --git a/src/warehouse_vision_safety/warehouse_vision_safety/scenario_publisher.py b/src/warehouse_vision_safety/warehouse_vision_safety/scenario_publisher.py
+index c9b4a18..9d46ede 100644
+--- a/src/warehouse_vision_safety/warehouse_vision_safety/scenario_publisher.py
++++ b/src/warehouse_vision_safety/warehouse_vision_safety/scenario_publisher.py
+@@ -1,17 +1,16 @@
+ import cv2
+ from cv_bridge import CvBridge
+-
+ import numpy as np
+-
+ import rclpy
+-
+ from rclpy.node import Node
+-from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
+-from sensor_msgs.msg import CameraInfo, Image
++from rclpy.qos import qos_profile_sensor_data
++from rclpy.qos import QoSProfile
++from rclpy.qos import ReliabilityPolicy
++from sensor_msgs.msg import CameraInfo
++from sensor_msgs.msg import Image
+ 
+ 
+ class ScenarioPublisher(Node):
+-
+     def __init__(self):
+         super().__init__('scenario_publisher')
+ 
+@@ -54,9 +53,7 @@ class ScenarioPublisher(Node):
+         rate_hz = max(float(self.get_parameter('rate_hz').value), 0.1)
+         self.timer = self.create_timer(1.0 / rate_hz, self.publish_frame)
+ 
+-        self.get_logger().info(
+-            f'Publishing simulated RGB-D data at {rate_hz:.1f} Hz'
+-        )
++        self.get_logger().info(f'Publishing simulated RGB-D data at {rate_hz:.1f} Hz')
+ 
+     def create_rgb_image(self):
+         image = np.full(
+@@ -94,11 +91,16 @@ class ScenarioPublisher(Node):
+             2,
+         )
+ 
+-        return image, head_center, head_radius, (
+-            body_left,
+-            body_top,
+-            body_right,
+-            body_bottom,
++        return (
++            image,
++            head_center,
++            head_radius,
++            (
++                body_left,
++                body_top,
++                body_right,
++                body_bottom,
++            ),
+         )
+ 
+     def create_depth_image(
+@@ -108,12 +110,8 @@ class ScenarioPublisher(Node):
+         body_bounds,
+         invalid_depth,
+     ):
+-        background_distance = float(
+-            self.get_parameter('background_distance_m').value
+-        )
+-        person_distance = float(
+-            self.get_parameter('person_distance_m').value
+-        )
++        background_distance = float(self.get_parameter('background_distance_m').value)
++        person_distance = float(self.get_parameter('person_distance_m').value)
+ 
+         depth = np.full(
+             (self.height, self.width),
+@@ -146,14 +144,29 @@ class ScenarioPublisher(Node):
+         center_y = self.height / 2.0
+ 
+         message.k = [
+-            focal_length, 0.0, center_x,
+-            0.0, focal_length, center_y,
+-            0.0, 0.0, 1.0,
++            focal_length,
++            0.0,
++            center_x,
++            0.0,
++            focal_length,
++            center_y,
++            0.0,
++            0.0,
++            1.0,
+         ]
+         message.p = [
+-            focal_length, 0.0, center_x, 0.0,
+-            0.0, focal_length, center_y, 0.0,
+-            0.0, 0.0, 1.0, 0.0,
++            focal_length,
++            0.0,
++            center_x,
++            0.0,
++            0.0,
++            focal_length,
++            center_y,
++            0.0,
++            0.0,
++            0.0,
++            1.0,
++            0.0,
+         ]
+ 
+         return message
+@@ -161,25 +174,13 @@ class ScenarioPublisher(Node):
+     def publish_frame(self):
+         self.frame_count += 1
+ 
+-        invalid_every = int(
+-            self.get_parameter('invalid_depth_every_n').value
+-        )
+-        drop_every = int(
+-            self.get_parameter('drop_depth_every_n').value
+-        )
++        invalid_every = int(self.get_parameter('invalid_depth_every_n').value)
++        drop_every = int(self.get_parameter('drop_depth_every_n').value)
+ 
+-        invalid_depth = (
+-            invalid_every > 0
+-            and self.frame_count % invalid_every == 0
+-        )
+-        drop_depth = (
+-            drop_every > 0
+-            and self.frame_count % drop_every == 0
+-        )
++        invalid_depth = invalid_every > 0 and self.frame_count % invalid_every == 0
++        drop_depth = drop_every > 0 and self.frame_count % drop_every == 0
+ 
+-        rgb, head_center, head_radius, body_bounds = (
+-            self.create_rgb_image()
+-        )
++        rgb, head_center, head_radius, body_bounds = self.create_rgb_image()
+         depth = self.create_depth_image(
+             head_center,
+             head_radius,
+@@ -194,9 +195,7 @@ class ScenarioPublisher(Node):
+         color_message.header.frame_id = 'sim_camera_optical_frame'
+ 
+         self.color_publisher.publish(color_message)
+-        self.camera_info_publisher.publish(
+-            self.create_camera_info(stamp)
+-        )
++        self.camera_info_publisher.publish(self.create_camera_info(stamp))
+ 
+         if not drop_depth:
+             depth_message = self.bridge.cv2_to_imgmsg(
