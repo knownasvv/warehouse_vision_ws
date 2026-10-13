@@ -6,7 +6,7 @@ import numpy as np
 import rclpy
 
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import CameraInfo, Image
 
 
@@ -32,7 +32,10 @@ class ScenarioPublisher(Node):
         self.color_publisher = self.create_publisher(
             Image,
             '/sim_camera/color/image_raw',
-            qos_profile_sensor_data,
+            QoSProfile(
+                depth=5,
+                reliability=ReliabilityPolicy.RELIABLE,
+            ),
         )
         self.depth_publisher = self.create_publisher(
             Image,

@@ -14,10 +14,9 @@ setup(
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name, 'launch'), 
-            glob(os.path.join('launch', '*.launch.[pxy][yma]*'))),
-        (os.path.join('share', package_name, 'config'), 
-            glob(os.path.join('config', '*.yaml*'))),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.[pxy][yma]*')),
+        (os.path.join('share', package_name, 'config'), glob('config/*.yaml*')),
+        (os.path.join('share', package_name, 'models'), glob('models/*.onnx')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -34,7 +33,8 @@ setup(
         'console_scripts': [
             'scenario_publisher = warehouse_vision_safety.scenario_publisher:main',
             'mock_person_detector = warehouse_vision_safety.mock_person_detector:main',
-            'risk_monitor = warehouse_vision_safety.risk_monitor:main'
+            'risk_monitor = warehouse_vision_safety.risk_monitor:main',
+            'ai_person_detector = warehouse_vision_safety.ai_person_detector:main',
         ],
     },
 )
