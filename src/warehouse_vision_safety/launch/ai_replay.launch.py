@@ -2,8 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch_ros.actions import Node
 from launch.substitutions import EnvironmentVariable
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -21,19 +21,19 @@ def generate_launch_description():
                 output='screen'
             ),
             Node(
-                package="warehouse_vision_safety",
-                executable="ai_person_detector",
-                name="ai_person_detector",
+                package='warehouse_vision_safety',
+                executable='ai_person_detector',
+                name='ai_person_detector',
                 parameters=[config_path],
-                output="screen",
+                output='screen',
                 prefix=[EnvironmentVariable('WAREHOUSE_VISION_PYTHON')]
             ),
             Node(
-                package="warehouse_vision_safety",
-                executable="risk_monitor",
-                name="risk_monitor",
+                package='warehouse_vision_safety',
+                executable='risk_monitor',
+                name='risk_monitor',
                 parameters=[config_path],
-                output="screen",
+                output='screen',
             ),
         ]
     )

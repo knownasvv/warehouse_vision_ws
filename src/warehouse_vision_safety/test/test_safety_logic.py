@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from warehouse_vision_safety.safety_logic import (
-    DepthValidationError,
     classify_distance,
+    DepthValidationError,
     median_depth_in_bbox,
 )
 

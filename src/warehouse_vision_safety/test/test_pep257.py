@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+
 from ament_pep257.main import main
 import pytest
 
@@ -19,5 +21,7 @@ import pytest
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    rc = main(argv=['.', 'test'])
+    package_root = Path(__file__).resolve().parents[1]
+    paths = ['warehouse_vision_safety', 'launch', 'scripts', 'test', 'setup.py']
+    rc = main(argv=[str(package_root / path) for path in paths])
     assert rc == 0, 'Found code style errors / warnings'

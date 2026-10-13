@@ -306,6 +306,7 @@ class AIPersonDetector(Node):
                 throttle_duration_sec=2.0
             )
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = None

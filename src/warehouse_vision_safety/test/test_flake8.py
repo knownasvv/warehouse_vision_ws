@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+
 from ament_flake8.main import main_with_errors
 import pytest
 
@@ -19,7 +21,9 @@ import pytest
 @pytest.mark.flake8
 @pytest.mark.linter
 def test_flake8():
-    rc, errors = main_with_errors(argv=[])
+    package_root = Path(__file__).resolve().parents[1]
+    paths = ['warehouse_vision_safety', 'launch', 'scripts', 'test', 'setup.py']
+    rc, errors = main_with_errors(argv=[str(package_root / path) for path in paths])
     assert rc == 0, \
         'Found %d code style errors / warnings:\n' % len(errors) + \
         '\n'.join(errors)

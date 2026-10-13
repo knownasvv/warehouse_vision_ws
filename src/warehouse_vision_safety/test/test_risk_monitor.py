@@ -1,4 +1,4 @@
-'''Regression checks requiring the ROS 2 runtime and message packages.'''
+"""Regression checks requiring the ROS 2 runtime and message packages."""
 
 import math
 from types import SimpleNamespace
@@ -10,11 +10,12 @@ import pytest
 rclpy = pytest.importorskip('rclpy')
 pytest.importorskip('cv_bridge')
 
-from rclpy.duration import Duration  # noqa: E402 (ROS availability checked above)
-from rclpy.qos import ReliabilityPolicy  # noqa: E402 (ROS availability checked above)
-from vision_msgs.msg import Detection2D, Detection2DArray  # noqa: E402 (ROS availability checked above)
-from warehouse_vision_safety.risk_monitor import RiskMonitor  # noqa: E402 (ROS availability checked above)
-from warehouse_vision_safety.scenario_publisher import ScenarioPublisher  # noqa: E402 (ROS availability checked above)
+# Import ROS types after checking runtime availability.
+from rclpy.duration import Duration  # noqa: E402
+from rclpy.qos import ReliabilityPolicy  # noqa: E402
+from vision_msgs.msg import Detection2D, Detection2DArray  # noqa: E402
+from warehouse_vision_safety.risk_monitor import RiskMonitor  # noqa: E402
+from warehouse_vision_safety.scenario_publisher import ScenarioPublisher  # noqa: E402
 
 
 @pytest.fixture

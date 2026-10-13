@@ -1,7 +1,8 @@
-import csv
-import json
 from collections import Counter
-from datetime import datetime, timezone
+import csv
+from datetime import datetime
+from datetime import timezone
+import json
 from pathlib import Path
 from time import perf_counter
 
@@ -9,7 +10,8 @@ import numpy as np
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-from std_msgs.msg import Float32, String
+from std_msgs.msg import Float32
+from std_msgs.msg import String
 from vision_msgs.msg import Detection2DArray
 
 
@@ -39,7 +41,7 @@ def numeric_summary(values):
 
 
 class EvaluationRecorder(Node):
-    '''Record quantitative measurements from an AI perception trial.'''
+    """Record quantitative measurements from an AI perception trial."""
 
     def __init__(self):
         super().__init__('evaluation_recorder')
@@ -120,7 +122,7 @@ class EvaluationRecorder(Node):
         self.timer = self.create_timer(0.25, self.check_duration)
 
         self.get_logger().info(
-            f'Recording scenario \'{self.scenario_name}\' for '
+            f"Recording scenario '{self.scenario_name}' for "
             f'{self.duration_s:.1f} seconds'
         )
 

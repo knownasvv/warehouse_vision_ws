@@ -1,22 +1,23 @@
 from pathlib import Path
 
+from ament_index_python.packages import get_package_share_directory
 import cv2
+from cv_bridge import CvBridge
 import numpy as np
 import rclpy
-from ament_index_python.packages import get_package_share_directory
-from cv_bridge import CvBridge
 from rclpy.node import Node
-from sensor_msgs.msg import CameraInfo, Image
+from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import Image
 
 
 class RGBDReplayPublisher(Node):
     # Approximate person regions for the supplied bus.jpg image.
     # Coordinate are normalized: x_min, y_min, x_max, y_max
     PERSON_REGIONS = (
-        (0.00, 0.50, 0.11, 0.87), # Partially visible left person
-        (0.03, 0.35, 0.31, 0.86), # Main left person
-        (0.24, 0.35, 0.46, 0.82), # Centre person
-        (0.80, 0.34, 1.00, 0.88), # Right person
+        (0.00, 0.50, 0.11, 0.87),  # Partially visible left person
+        (0.03, 0.35, 0.31, 0.86),  # Main left person
+        (0.24, 0.35, 0.46, 0.82),  # Centre person
+        (0.80, 0.34, 1.00, 0.88),  # Right person
     )
 
     def __init__(self):
@@ -114,9 +115,12 @@ class RGBDReplayPublisher(Node):
     def publish_frame(self):
         self.frame_count += 1
 
-        person_distance = self.get_parameter('person_distance_m').get_parameter_value().double_value
-        background_distance = self.get_parameter('background_distance_m').get_parameter_value().double_value
-        invalid_every_n = self.get_parameter('invalid_depth_every_n').get_parameter_value().integer_value
+        person_distance = self.get_parameter(
+            'person_distance_m').get_parameter_value().double_value
+        background_distance = self.get_parameter(
+            'background_distance_m').get_parameter_value().double_value
+        invalid_every_n = self.get_parameter(
+            'invalid_depth_every_n').get_parameter_value().integer_value
         drop_every_n = self.get_parameter('drop_depth_every_n').get_parameter_value().integer_value
 
         if person_distance <= 0.0 or background_distance <= 0.0:

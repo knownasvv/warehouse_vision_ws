@@ -6,7 +6,7 @@ import message_filters
 import rclpy
 
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, qos_profile_sensor_data
+from rclpy.qos import qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32, String
 from vision_msgs.msg import Detection2DArray

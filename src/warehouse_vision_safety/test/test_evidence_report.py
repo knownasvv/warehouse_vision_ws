@@ -1,4 +1,4 @@
-'''Check reporting against recorded data, including failed historical trials.'''
+"""Check reporting against recorded data, including failed historical trials."""
 
 import importlib.util
 from pathlib import Path
