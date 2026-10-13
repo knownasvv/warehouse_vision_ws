@@ -36,7 +36,8 @@ setup(
             'mock_person_detector = warehouse_vision_safety.mock_person_detector:main',
             'risk_monitor = warehouse_vision_safety.risk_monitor:main',
             'ai_person_detector = warehouse_vision_safety.ai_person_detector:main',
-            'rgbd_replay_publisher = warehouse_vision_safety.rgbd_replay_publisher:main'
+            'rgbd_replay_publisher = warehouse_vision_safety.rgbd_replay_publisher:main',
+            'evaluation_recorder = warehouse_vision_safety.evaluation_recorder:main',
         ],
     },
 )
