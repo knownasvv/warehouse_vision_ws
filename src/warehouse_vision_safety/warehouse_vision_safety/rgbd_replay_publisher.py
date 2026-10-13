@@ -146,7 +146,7 @@ class RGBDReplayPublisher(Node):
             invalid_every_n > 0
             and self.frame_count % invalid_every_n == 0
         ):
-            self.apply_person_regions(depth_image, np.nan)
+            depth_image.fill(np.nan)
 
         should_drop_depth = (
             drop_every_n > 0
