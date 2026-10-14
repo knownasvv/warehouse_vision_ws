@@ -29,6 +29,16 @@ flowchart LR
     C --> D{CLEAR / SLOW / STOP / SENSOR_FAULT}
 ```
 
+## Captured results
+
+The three captures below summarize the live detection output, the latency trace, and the ROS graph for the system.
+
+![Person detection overlay](docs/images/person_detection_overlay.svg)
+
+![PlotJuggler latency trace](docs/images/plotjuggler_latency.svg)
+
+![ROS graph](docs/images/rosgraph.svg)
+
 ## Main components
 
 | Node | Responsibility |

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#e8d8b0"/>
+      <stop offset="100%" stop-color="#d8c38c"/>
+    </linearGradient>
+    <linearGradient id="bus" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#7fbbff"/>
+      <stop offset="100%" stop-color="#1a5fb4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1280" height="110" fill="#d5bf8a" opacity="0.9"/>
+  <rect x="60" y="100" width="130" height="180" fill="#d8c48d"/>
+  <rect x="220" y="120" width="180" height="160" fill="#d2b67e"/>
+  <rect x="910" y="90" width="200" height="170" fill="#d2b67e"/>
+  <rect x="1085" y="70" width="180" height="210" fill="#c7a96d"/>
+  <rect x="150" y="30" width="100" height="80" fill="#2d8a3d"/>
+  <rect x="1040" y="40" width="170" height="90" fill="#3c824a"/>
+  <line x1="0" y1="510" x2="1280" y2="510" stroke="#94908d" stroke-width="8" opacity="0.7"/>
+  <line x1="0" y1="515" x2="1280" y2="515" stroke="#b2b3b2" stroke-width="3" opacity="0.8"/>
+  <g opacity="0.75">
+    <path d="M0,550 L110,550 L140,620 L0,620 Z" fill="#a8a8a8"/>
+    <path d="M640,550 L1280,550 L1280,620 L790,620 Z" fill="#a8a8a8"/>
+  </g>
+
+  <g>
+    <rect x="320" y="200" width="650" height="270" rx="8" fill="url(#bus)"/>
+    <rect x="290" y="145" width="720" height="60" rx="6" fill="#dfe0e1" opacity="0.8"/>
+    <rect x="350" y="170" width="180" height="35" fill="#f2f2f2" opacity="0.75"/>
+    <rect x="760" y="163" width="150" height="28" fill="#f2f2f2" opacity="0.75"/>
+    <rect x="305" y="280" width="80" height="120" fill="#0097d6" opacity="0.65"/>
+    <rect x="925" y="280" width="80" height="120" fill="#0097d6" opacity="0.65"/>
+    <text x="520" y="335" font-size="46" font-weight="700" fill="#ffffff" opacity="0.9">cero</text>
+    <text x="680" y="335" font-size="46" font-weight="700" fill="#ffffff" opacity="0.9">emisiones</text>
+    <text x="540" y="390" font-size="22" fill="#ffffff" opacity="0.9">electri c a mTe</text>
+    <path d="M600,390 L700,390 Q760,390 780,430 L780,430 Q760,470 700,470 L600,470 Q540,470 545,430 L545,430 Q540,390 600,390 Z" fill="#d7f762" opacity="0.9"/>
+  </g>
+
+  <g>
+    <rect x="260" y="170" width="110" height="160" fill="none" stroke="#16f24f" stroke-width="6"/>
+    <rect x="340" y="205" width="110" height="150" fill="none" stroke="#16f24f" stroke-width="6"/>
+    <rect x="905" y="200" width="115" height="150" fill="none" stroke="#16f24f" stroke-width="6"/>
+    <text x="272" y="200" font-size="26" fill="#16f24f" font-weight="700">person 0.85</text>
+    <text x="350" y="240" font-size="26" fill="#16f24f" font-weight="700">person 0.83</text>
+    <text x="925" y="240" font-size="26" fill="#16f24f" font-weight="700">person 0.85</text>
+  </g>
+
+  <g>
+    <path d="M210,520 L260,420 L310,520 Z" fill="#6f4d2d" opacity="0.7"/>
+    <path d="M1030,520 L1080,420 L1115,520 Z" fill="#6f4d2d" opacity="0.7"/>
+    <circle cx="1000" cy="665" r="30" fill="#111" opacity="0.7"/>
+    <circle cx="1160" cy="665" r="30" fill="#111" opacity="0.7"/>
+  </g>
+</svg>

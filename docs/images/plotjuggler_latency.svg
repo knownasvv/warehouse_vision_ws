@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 860" width="1400" height="860">
+  <defs>
+    <linearGradient id="bgDark" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1e2229"/>
+      <stop offset="100%" stop-color="#101519"/>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="860" fill="url(#bgDark)"/>
+  <rect x="0" y="0" width="1400" height="60" fill="#1a1d23"/>
+  <text x="24" y="36" fill="#f0f0f0" font-size="18" font-family="sans-serif">PlotJuggler</text>
+
+  <rect x="160" y="90" width="640" height="520" fill="#f3f3f3"/>
+  <rect x="80" y="90" width="60" height="520" fill="#ececec"/>
+  <rect x="80" y="640" width="720" height="150" fill="#f7f6f6"/>
+
+  <g font-family="sans-serif" font-size="14" fill="#1d1d1d">
+    <text x="130" y="120">/perception/inference_time_ms</text>
+    <text x="130" y="150">/perception/person_distance_m</text>
+  </g>
+
+  <g stroke="#1e7ed6" stroke-width="2" fill="none">
+    <path d="M190 500 L220 470 L240 380 L300 420 L330 460 L350 390 L395 330 L430 280 L470 300 L520 360 L560 420 L600 290 L630 260 L660 280 L710 370 L780 410"/>
+  </g>
+
+  <g stroke="#aaa" stroke-width="1">
+    <line x1="160" y1="610" x2="800" y2="610"/>
+    <line x1="160" y1="180" x2="160" y2="610"/>
+    <line x1="160" y1="510" x2="800" y2="510"/>
+    <line x1="160" y1="410" x2="800" y2="410"/>
+    <line x1="160" y1="310" x2="800" y2="310"/>
+    <line x1="160" y1="210" x2="800" y2="210"/>
+  </g>
+
+  <g fill="#f4f4f4" stroke="#c8c8c8">
+    <rect x="840" y="60" width="540" height="720" rx="3"/>
+    <rect x="860" y="88" width="500" height="680" fill="#101519"/>
+  </g>
+
+  <g font-family="monospace" font-size="15" fill="#d7e6f8">
+    <text x="875" y="118">/perception/inference_time_ms</text>
+    <text x="875" y="160">/perception/person_distance_m</text>
+    <text x="875" y="202">/perception/debug_image</text>
+    <text x="875" y="244">/safety/state</text>
+  </g>
+
+  <g stroke="#33a2ff" stroke-width="2" fill="none">
+    <path d="M880 550 L930 510 L980 440 L1035 370 L1090 390 L1140 430 L1195 420 L1240 470"/>
+  </g>
+  <g stroke="#ff5a5a" stroke-width="2" fill="none">
+    <path d="M880 620 L930 600 L980 560 L1035 520 L1090 500 L1140 520 L1195 462 L1240 430"/>
+  </g>
+
+  <g font-family="sans-serif" font-size="18" fill="#d9d9d9">
+    <text x="50" y="820">06:33:20.0 06:33:30.0 06:33:40.0 06:33:50.0 06:34:00.0</text>
+  </g>
+</svg>
