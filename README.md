@@ -33,11 +33,11 @@ flowchart LR
 
 The three captures below summarize the live detection output, the latency trace, and the ROS graph for the system.
 
-![Person detection overlay](docs/images/person_detection_overlay.svg)
+![Person detection overlay](docs/images/warehouse_vision_ws%20-%20perception.png)
 
-![PlotJuggler latency trace](docs/images/plotjuggler_latency.svg)
+![PlotJuggler latency trace](docs/images/warehouse_vision_ws%20-%20plot%20distance%20and%20inference%20time.png)
 
-![ROS graph](docs/images/rosgraph.svg)
+![ROS graph](docs/images/warehouse_vision_ws%20-%20rqt_graph.png)
 
 ## Main components
 
